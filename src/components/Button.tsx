@@ -1,4 +1,5 @@
 import type { ComponentProps } from 'react'
+import { twMerge } from 'tailwind-merge'
 
 interface ButtonProps extends ComponentProps<'button'> {
   variant?: 'primary' | 'secondary'
@@ -26,7 +27,13 @@ export function Button({
   return (
     <button
       type={type}
-      className={`flex items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${variantClass[variant]} ${sizeClass[size]} ${className}`}
+      // twMerge: className으로 넘긴 높이·글자 크기가 기본 size 값을 덮어쓰도록
+      className={twMerge(
+        'flex items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+        variantClass[variant],
+        sizeClass[size],
+        className,
+      )}
       {...props}
     />
   )
