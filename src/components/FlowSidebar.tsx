@@ -1,4 +1,5 @@
 import checkIcon from '../assets/icons/check.svg'
+import { Logo } from './Logo'
 
 const FLOW_STEPS = ['상황 설명하기', '상황 확인하기', '남은 신청 보기', '신청 진행 관리'] as const
 
@@ -7,10 +8,7 @@ export function FlowSidebar({ activeStep }: { activeStep: number }) {
   return (
     <aside className="sticky top-0 hidden h-screen min-h-150 w-[320px] shrink-0 flex-col justify-between bg-primary px-8 py-10 text-white lg:flex">
       <div className="flex flex-col gap-12">
-        <div className="flex items-center gap-2.5">
-          <p className="text-[20px] font-bold">남은 신청 안내</p>
-          <p className="text-[14px] font-medium opacity-70">용인시</p>
-        </div>
+        <Logo />
 
         <nav aria-label="진행 단계" className="flex flex-col gap-1">
           <p className="text-[13px] font-medium opacity-60">진행 단계</p>
