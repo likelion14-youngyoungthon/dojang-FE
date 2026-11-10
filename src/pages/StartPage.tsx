@@ -1,22 +1,22 @@
-import { useNavigate } from 'react-router'
-import { Button } from '../components/Button'
-import { Field } from '../components/Field'
-import { Select } from '../components/Select'
-import { NotEligibleModal } from '../components/NotEligibleModal'
-import { StepLayout } from '../components/StepLayout'
-import { GuSegmented } from '../components/GuSegmented'
-import { DONG_BY_GU } from '../data/regions'
-import { useFlow } from '../flow/FlowContext'
+import { useNavigate } from "react-router";
+import { Button } from "../components/Button";
+import { Field } from "../components/Field";
+import { Select } from "../components/Select";
+import { NotEligibleModal } from "../components/NotEligibleModal";
+import { StepLayout } from "../components/StepLayout";
+import { GuSegmented } from "../components/GuSegmented";
+import { DONG_BY_GU } from "../data/regions";
+import { useFlow } from "../flow/FlowContext";
 
 interface StartPageProps {
   /** true면 02 비대상 안내 모달을 띄운 상태 */
-  showNotEligible?: boolean
+  showNotEligible?: boolean;
 }
 
 /** 01 서비스 시작 화면 · 02 비대상 안내 화면 */
 export function StartPage({ showNotEligible = false }: StartPageProps) {
-  const navigate = useNavigate()
-  const { state, update } = useFlow()
+  const navigate = useNavigate();
+  const { state, update } = useFlow();
 
   const footer = (
     <div className="flex flex-col items-center gap-1.5 text-center text-[14px]">
@@ -25,19 +25,21 @@ export function StartPage({ showNotEligible = false }: StartPageProps) {
       </p>
       <button
         type="button"
-        onClick={() => navigate('/not-eligible')}
-        className="font-medium text-primary underline"
+        onClick={() => navigate("/not-eligible")}
+        className="font-medium text-primary underline cursor-pointer"
       >
         용인시 거주 대상자가 아닌 경우
       </button>
     </div>
-  )
+  );
 
   return (
     <>
       <StepLayout step={1} formWidth={480} footer={footer}>
         <div className="flex flex-col gap-2">
-          <h2 className="text-[28px] leading-[1.35] font-bold">거주 지역을 선택해 주세요</h2>
+          <h2 className="text-[28px] leading-[1.35] font-bold">
+            거주 지역을 선택해 주세요
+          </h2>
           <p className="text-[16px] leading-[1.6] text-gray-700">
             선택한 읍면동을 기준으로 관할 행정복지센터와
             <br />
@@ -48,11 +50,14 @@ export function StartPage({ showNotEligible = false }: StartPageProps) {
         <form
           className="flex flex-col gap-7"
           onSubmit={(e) => {
-            e.preventDefault()
-            navigate('/consent')
+            e.preventDefault();
+            navigate("/consent");
           }}
         >
-          <GuSegmented value={state.gu} onChange={(gu) => update({ gu, dong: DONG_BY_GU[gu][0] })} />
+          <GuSegmented
+            value={state.gu}
+            onChange={(gu) => update({ gu, dong: DONG_BY_GU[gu][0] })}
+          />
 
           <Field
             label="읍면동"
@@ -74,8 +79,11 @@ export function StartPage({ showNotEligible = false }: StartPageProps) {
       </StepLayout>
 
       {showNotEligible && (
-        <NotEligibleModal onReselect={() => navigate('/')} onClose={() => navigate('/')} />
+        <NotEligibleModal
+          onReselect={() => navigate("/")}
+          onClose={() => navigate("/")}
+        />
       )}
     </>
-  )
+  );
 }
