@@ -36,6 +36,14 @@
     letter-spacing: -0.01em;
   }
 
+  /* 선택 가능한 요소는 모두 손가락 커서 (Tailwind v4 기본값은 default) */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  select:not(:disabled),
+  label:has(input:not(:disabled)) {
+    cursor: pointer;
+  }
+
   /* 25 접근성 설정 — 키보드 탐색 강조 */
   .a11y-focus :focus-visible {
     outline: 3px solid var(--color-primary);
