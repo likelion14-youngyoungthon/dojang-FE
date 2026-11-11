@@ -10,6 +10,7 @@ import { FollowUpQuestionsPage } from './pages/FollowUpQuestionsPage'
 import { IncomePage } from './pages/IncomePage'
 import { InstitutionDetailPage } from './pages/InstitutionDetailPage'
 import { InstitutionListPage } from './pages/InstitutionListPage'
+import { LoginPage } from './pages/LoginPage'
 import { ManualInputPage } from './pages/ManualInputPage'
 import { MapPage } from './pages/MapPage'
 import { PriorApplicationsPage } from './pages/PriorApplicationsPage'
@@ -29,8 +30,9 @@ function App() {
     <FlowProvider>
       <BrowserRouter>
         <Routes>
-          {/* 시작 단계 (01~05, 25) */}
-          <Route path="/" element={<StartPage />} />
+          {/* 시작 단계 (00~05, 25) */}
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/region" element={<StartPage />} />
           <Route path="/not-eligible" element={<StartPage showNotEligible />} />
           <Route path="/consent" element={<ConsentPage />} />
           <Route path="/applicant" element={<ApplicantPage />} />

@@ -79,7 +79,7 @@ export function ConsentPage() {
       </Checkbox>
 
       <div className="flex gap-3">
-        <Button variant="secondary" className="w-[120px] shrink-0" onClick={() => navigate('/')}>
+        <Button variant="secondary" className="w-[120px] shrink-0" onClick={() => navigate('/region')}>
           이전
         </Button>
         <Button

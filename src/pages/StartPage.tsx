@@ -80,8 +80,8 @@ export function StartPage({ showNotEligible = false }: StartPageProps) {
 
       {showNotEligible && (
         <NotEligibleModal
-          onReselect={() => navigate("/")}
-          onClose={() => navigate("/")}
+          onReselect={() => navigate("/region")}
+          onClose={() => navigate("/region")}
         />
       )}
     </>
