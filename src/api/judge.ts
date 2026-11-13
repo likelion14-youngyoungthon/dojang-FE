@@ -83,3 +83,24 @@ export function toJudgeRequest(s: Partial<Situation>): JudgeRequest {
 }
 
 export const postJudge = (request: JudgeRequest) => api.post<JudgeResult>('/judge', request)
+
+const invert = (m: Record<string, string>) => Object.fromEntries(Object.entries(m).map(([k, v]) => [v, k]))
+
+/** 다시 방문 — 저장된 profile(judge 요청)을 화면 상황 값으로 되돌림. 구·누가·소득 글자는 서버에 없어 비움 */
+export function fromJudgeRequest(p: JudgeRequest): Partial<Situation> {
+  const disability = invert(DISABILITY)
+  const severity = invert(SEVERITY)
+  const tags = invert(TAGS)
+  const livelihood = invert(LIVELIHOOD)
+  return {
+    age: String(p.age),
+    dong: p.dong,
+    disabilityType: p.disability_type ? disability[p.disability_type] : null,
+    severity: p.severity ? (severity[p.severity] as Situation['severity']) : null,
+    circumstances: (p.tags ?? []).map((t) => tags[t]).filter(Boolean),
+    bundle: p.reg_items_unknown ? ['unknown'] : (p.reg_items ?? []),
+    householdSize: p.household ?? 3,
+    basicLivelihood: p.status ? (livelihood[p.status] as Situation['basicLivelihood']) : null,
+    income: (p.income_band as Situation['income']) ?? null,
+  }
+}

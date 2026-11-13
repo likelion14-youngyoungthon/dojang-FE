@@ -126,6 +126,8 @@ export interface Benefit {
     onlineUrl?: string
   }
   documents?: Document[]
+  /** 창구에서 쓰는 신청서 이름 (judge form_names). 없으면 '서비스명 신청서' */
+  formNames?: string[]
   /** 제목 아래 한 줄 설명 (큰 글씨·쉬운 말) */
   tagline?: string
   /** 큰 글씨 화면 (Figma M1) — TODO: GET /services/{id}/steps */
@@ -414,6 +416,9 @@ export function toJudgeView(result: JudgeResult, apiOffices: ApiOffice[]): Judge
         name: example?.name ?? i.name,
         status: recruit ? 'recruit' : i.status === 'apply' ? 'before' : 'check',
         officeId: recruit ? null : i.office.id,
+        // 26 가져갈 것: judge 결과 재사용 (대응표 1번)
+        documents: i.documents.map((name) => ({ name, note: example?.name ?? i.name })),
+        formNames: i.form_names,
       }
     })
 
