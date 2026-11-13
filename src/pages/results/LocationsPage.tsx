@@ -1,30 +1,26 @@
 import { useSearchParams } from 'react-router'
-import mapBaseImage from '../../assets/icons/map-base.svg'
-import mapPinIcon from '../../assets/icons/map-pin-icon.svg'
-import mapPinOtherIcon from '../../assets/icons/map-pin-other.svg'
-import mapPinSelectedIcon from '../../assets/icons/map-pin-selected.svg'
-import minusIcon from '../../assets/icons/minus.svg'
 import navigationIcon from '../../assets/icons/navigation.svg'
 import phoneIcon from '../../assets/icons/phone.svg'
-import plusIcon from '../../assets/icons/plus.svg'
+import { KakaoMap, type MapPlace } from '../../components/results/KakaoMap'
 import { PageTitle, ResultsLayout } from '../../components/results/ResultsLayout'
 import { PlaceTile } from '../../components/results/Tiles'
 import { useResults } from '../../results/ResultsContext'
 
-/** 21 접수처 위치 — 지도는 카카오맵 SDK 연동 전이라 Figma 그림으로 대신함 */
+/** 21 접수처 위치 — 카카오맵 (키: .env.local의 VITE_KAKAO_MAP_KEY). 좌표가 있는 곳만 핀, 목록에는 모두 */
 export function LocationsPage() {
   const [params, setParams] = useSearchParams()
   const { remaining, offices } = useResults()
   const selectedId = params.get('office') ?? offices[0]?.id
   const selected = offices.find((o) => o.id === selectedId) ?? offices[0]
   const countAt = (id: string) => remaining.filter((b) => b.officeId === id).length
+  const places = offices.filter((o): o is typeof o & MapPlace => o.lat != null && o.lng != null)
 
   return (
     <ResultsLayout
       back={{ label: '남은 신청', to: '/results' }}
       title={<PageTitle>접수처 위치</PageTitle>}
       aside={offices.map((office) => {
-        const active = office.id === selected.id
+        const active = office.id === selected?.id
         return (
           <section
             key={office.id}
@@ -73,38 +69,12 @@ export function LocationsPage() {
         )
       })}
     >
-      {/* TODO: 카카오맵 SDK로 교체 (지도 바탕·핀·확대 축소는 지금 보여 주기용) */}
-      <div
-        role="img"
-        aria-label={`${selected.name} 위치 지도`}
-        className="relative flex h-[730px] w-full items-center justify-center overflow-hidden rounded-[20px] border border-divider bg-[#f2efe9] shadow-card"
-      >
-        <img src={mapBaseImage} alt="" className="absolute -inset-px size-[calc(100%+2px)] max-w-none" />
-        <img src={mapPinOtherIcon} alt="" width={24} height={32} className="absolute top-[20.4%] left-[27.7%]" />
-        <img src={mapPinOtherIcon} alt="" width={24} height={32} className="absolute top-[76.7%] left-[83.1%]" />
-
-        <div className="relative flex flex-col items-center gap-2">
-          <span className="relative h-14 w-11 drop-shadow-[0_16px_20px_rgb(25_31_40/0.16)]">
-            <img src={mapPinSelectedIcon} alt="" width={44} height={56} className="absolute inset-0" />
-            <img src={mapPinIcon} alt="" width={22} height={22} className="absolute top-[10.5px] left-[11px]" />
-          </span>
-          <span className="flex h-8 items-center rounded-lg bg-surface px-3 text-13 font-bold text-text-strong drop-shadow-[0_8px_12px_rgb(16_24_40/0.06)]">
-            {selected.name}
-          </span>
-        </div>
-
-        <div className="absolute top-[15px] right-[15px] flex w-10 flex-col overflow-hidden rounded border border-[#c9ced4] bg-surface" aria-hidden>
-          <span className="flex size-10 items-center justify-center">
-            <img src={plusIcon} alt="" width={20} height={20} />
-          </span>
-          <span className="h-px w-10 bg-divider" />
-          <span className="flex size-10 items-center justify-center">
-            <img src={minusIcon} alt="" width={20} height={20} />
-          </span>
-        </div>
-
-        <p className="absolute bottom-3 left-[11px] text-[11px] font-bold text-icon-off">kakao map</p>
-      </div>
+      <KakaoMap
+        places={places}
+        selectedId={selected?.id ?? ''}
+        onSelect={(id) => setParams({ office: id }, { replace: true })}
+        className="h-[730px] w-full"
+      />
     </ResultsLayout>
   )
 }

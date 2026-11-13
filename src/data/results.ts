@@ -55,12 +55,15 @@ export interface Office {
   phone: string
   /** 줄 바꿈 위치까지 디자인대로 */
   addressLines: string[]
+  /** 지도 핀 좌표 (GET /offices). 없으면 지도에 핀 없이 목록에만 보임 */
+  lat: number | null
+  lng: number | null
 }
 
 export const OFFICES: Office[] = [
-  { id: 'dong_center', name: '백암면 행정복지센터', kind: '행정복지센터', icon: 'office', phone: '031-6193-5792', addressLines: ['경기도 용인시 처인구', '백암면 백암로 189'] },
-  { id: 'education_office', name: '용인교육지원청', kind: '교육지원청', icon: 'education', phone: '031-8020-9113', addressLines: ['경기도 용인시 처인구', '중부대로1161번길 69'] },
-  { id: 'mobility_center', name: '용인시 교통약자이동지원센터', kind: '이동지원센터', icon: 'transport', phone: '1666-0420', addressLines: ['경기도 용인시 처인구 동백죽전대로 61', '(용인미르스타디움)'] },
+  { id: 'dong_center', name: '백암면 행정복지센터', kind: '행정복지센터', icon: 'office', phone: '031-6193-5792', addressLines: ['경기도 용인시 처인구', '백암면 백암로 189'], lat: 37.16396, lng: 127.375365 },
+  { id: 'education_office', name: '용인교육지원청', kind: '교육지원청', icon: 'education', phone: '031-8020-9113', addressLines: ['경기도 용인시 처인구', '중부대로1161번길 69'], lat: 37.2426232, lng: 127.1797311 },
+  { id: 'mobility_center', name: '용인시 교통약자이동지원센터', kind: '이동지원센터', icon: 'transport', phone: '1666-0420', addressLines: ['경기도 용인시 처인구 동백죽전대로 61', '(용인미르스타디움)'], lat: 37.249624, lng: 127.165149 },
 ]
 
 export interface Document {
@@ -429,6 +432,8 @@ export function toJudgeView(result: JudgeResult, apiOffices: ApiOffice[]): Judge
         icon: OFFICE_ICON[id] ?? 'office',
         phone: api?.phone ?? judgeOffice.get(id)?.phone ?? '',
         addressLines: splitAddress(api?.address),
+        lat: api?.lat ?? null,
+        lng: api?.lng ?? null,
       }
     })
 
