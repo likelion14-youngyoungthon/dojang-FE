@@ -145,7 +145,7 @@ export interface Benefit {
     result?: LargeBlock
     steps?: string[]
   }
-  /** 문자·온라인 화면 (Figma M2) — TODO: 서버 필드 online(온라인 신청 가능) 추가 필요 */
+  /** 문자·온라인 화면 (Figma M2) 예시 값 — 판정 결과는 judge online·benefit·form_names로 채움 */
   textOnline?: {
     facts: { label: string; value: string; unit?: string }[]
     /** 창구에서 쓰는 신청서 이름 (줄 바꿈 위치까지) */
@@ -363,6 +363,9 @@ export type StatusTab = (typeof STATUS_TABS)[number]['value']
 // 서버 필드(category·short_desc 등)가 [추가 예정]이라 같은 서비스의 Figma 예시 값을 빌려 씀
 // ─────────────────────────────────────────────────────────────
 
+/** 온라인 신청 안내 주소 — Figma 예시와 같은 복지로 첫 화면 */
+const BOKJIRO_URL = 'https://www.bokjiro.go.kr'
+
 /** 대응표 6번: office.id → 장소 아이콘 */
 const OFFICE_ICON: Record<string, PlaceIconKind> = { education_office: 'education', mobility_center: 'transport' }
 
@@ -414,6 +417,8 @@ export function toJudgeView(result: JudgeResult, apiOffices: ApiOffice[]): Judge
         detail: {
           reasons: (i.conditions ?? []).map((c) => ({ condition: c.label, criteria: c.rule, value: c.value, met: c.met })),
           evidence: null,
+          // 문자·온라인: online이 true일 때만 복지로 신청 안내 (basis.sources는 지원정보 페이지라 신청 주소로 쓰지 않음)
+          onlineUrl: i.online ? BOKJIRO_URL : undefined,
         },
         // 26 가져갈 것: judge 결과 재사용 (대응표 1번)
         documents: i.documents.map((name) => ({ name, note: i.name })),
