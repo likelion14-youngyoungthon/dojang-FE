@@ -37,7 +37,12 @@ export function TextOnlineDetail({ benefit }: { benefit: Benefit }) {
   const reasons: { condition: string; criteria: string; mine: string; verdict: Verdict }[] =
     benefit.textOnline?.reasons ??
     // TODO: 판정 결과는 POST /judge 응답으로
-    benefit.detail?.reasons.map((r) => ({ condition: r.condition, criteria: r.criteria, mine: mine[r.field], verdict: 'ok' as const })) ??
+    benefit.detail?.reasons.map((r) => ({
+      condition: r.condition,
+      criteria: r.criteria,
+      mine: r.value ?? (r.field ? mine[r.field] : ''),
+      verdict: r.met === null ? ('check' as const) : ('ok' as const),
+    })) ??
     []
 
   const copy = async () => {

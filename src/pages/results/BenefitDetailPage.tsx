@@ -40,7 +40,7 @@ function DefaultDetail({ benefit, titleAside }: { benefit: Benefit; titleAside?:
   const { situation } = useSituation()
   const office = getOffice(benefit.officeId)
   const detail = benefit.detail
-  const mine: Record<Reason['field'], string> = {
+  const mine: Record<NonNullable<Reason['field']>, string> = {
     age: describeAge(situation),
     disability: describeDisability(situation),
     income: describeIncome(situation),
@@ -58,6 +58,8 @@ function DefaultDetail({ benefit, titleAside }: { benefit: Benefit; titleAside?:
         </div>
       }
       titleAside={titleAside}
+      // 대응표 8번: description = L2 제목 아래 설명 (null이면 숨김)
+      below={benefit.tagline && <p className="text-17 text-text">{benefit.tagline}</p>}
       aside={
         office && (
           <>
@@ -75,7 +77,15 @@ function DefaultDetail({ benefit, titleAside }: { benefit: Benefit; titleAside?:
         )
       }
     >
-      {detail?.amount && (
+      {/* 받는 것 — judge benefit: 큰 글자 amount / 작은 글자 note (대응표 8번) */}
+      {benefit.benefitAmount && (
+        <section aria-label="받는 것" className="flex flex-col gap-0.5 rounded-[20px] bg-primary px-7 pt-5 pb-6 text-on-primary">
+          <p className="text-28 font-bold">{benefit.benefitAmount.amount}</p>
+          {benefit.benefitAmount.note && <p className="text-15 font-medium">{benefit.benefitAmount.note}</p>}
+        </section>
+      )}
+
+      {!benefit.benefitAmount && detail?.amount && (
         <section aria-label="지원 금액" className="flex flex-wrap items-center gap-7 rounded-[20px] bg-primary px-7 pt-5 pb-6 text-on-primary">
           {detail.amount.map(({ label, value }, i) => (
             <div key={label} className="flex items-center gap-7">
@@ -132,13 +142,19 @@ function DefaultDetail({ benefit, titleAside }: { benefit: Benefit; titleAside?:
                     <p className="text-17 font-bold text-text-strong">{r.condition}</p>
                     <p className="text-17 text-text">{r.criteria}</p>
                   </td>
-                  <td className="py-[13px] pl-4 text-17 font-medium text-text-strong">{mine[r.field]}</td>
+                  <td className="py-[13px] pl-4 text-17 font-medium text-text-strong">{r.value ?? (r.field ? mine[r.field] : '')}</td>
                   <td className="py-[13px] pr-6 pl-4">
-                    {/* TODO: 판정 결과(맞아요/확인 필요 등)는 POST /judge 응답으로 */}
-                    <span className="inline-flex h-[26px] items-center gap-1 rounded-lg bg-success-100 pr-2 pl-1.5 text-13 font-bold text-success">
-                      <img src={checkSuccessIcon} alt="" width={14} height={14} />
-                      맞아요
-                    </span>
+                    {/* 판정: judge conditions[].met — true 맞아요 · null 확인 필요 · false 맞지 않아요 (Figma 예시 값은 met 없음 = 맞아요) */}
+                    {r.met === null ? (
+                      <span className="inline-flex h-[26px] items-center rounded-lg bg-warn-100 px-2 text-13 font-bold text-warn">확인 필요</span>
+                    ) : r.met === false ? (
+                      <span className="inline-flex h-[26px] items-center rounded-lg bg-neutral-100 px-2 text-13 font-bold text-text">맞지 않아요</span>
+                    ) : (
+                      <span className="inline-flex h-[26px] items-center gap-1 rounded-lg bg-success-100 pr-2 pl-1.5 text-13 font-bold text-success">
+                        <img src={checkSuccessIcon} alt="" width={14} height={14} />
+                        맞아요
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}

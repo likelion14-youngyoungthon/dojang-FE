@@ -18,6 +18,20 @@ export interface JudgeItem {
   notes: string[]
   /** 나중에 가능: 이 나이부터 받을 수 있음 */
   eligible_from_age: number | null
+  /** 복지 아이콘 종류 (대응표 6번). null이면 숨김 */
+  category: string | null
+  /** 13 목록 둘째 줄. null이면 숨김 */
+  short_desc: string | null
+  /** L2 제목 아래 설명. null이면 숨김 */
+  description: string | null
+  /** status: check일 때만 주황 글자 */
+  check_reason: string | null
+  /** 받는 것: 큰 글자 amount / 작은 글자 note */
+  benefit: { amount: string; note: string | null } | null
+  /** '왜 받을 수 있나요' — met: true 맞음 · false 안 맞음 · null 미확인 */
+  conditions: { key: string; label: string; rule: string; value: string | null; met: boolean | null }[] | null
+  /** 문자·온라인 모드 — 복지로 온라인 신청 근거가 있으면 true */
+  online: boolean
 }
 
 /** data는 배열이 아니라 서비스 id를 키로 한 객체 (순서 유지) */

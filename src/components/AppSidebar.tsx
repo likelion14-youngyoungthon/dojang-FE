@@ -121,7 +121,7 @@ function ResultsNav() {
     ...applied.map(({ benefit, submittedAt }) => ({
       key: benefit.id,
       name: benefit.name,
-      icon: BENEFIT_ICONS[benefit.icon],
+      icon: benefit.icon ? BENEFIT_ICONS[benefit.icon] : null,
       sub: `${formatMonthDay(submittedAt)} 신청`,
       to: `/history/${benefit.id}`,
     })),
@@ -176,7 +176,7 @@ function ResultsNav() {
               const body = (
                 <>
                   <span className="flex items-center gap-1.5">
-                    <InsetIcon src={item.icon.src} inset={item.icon.inset} bleed={item.icon.bleed} className="size-4" />
+                    {item.icon && <InsetIcon src={item.icon.src} inset={item.icon.inset} bleed={item.icon.bleed} className="size-4" />}
                     <span className={`min-w-0 flex-1 truncate text-15 ${current ? 'font-bold text-primary' : 'font-medium text-text-strong'}`}>
                       {item.name}
                     </span>

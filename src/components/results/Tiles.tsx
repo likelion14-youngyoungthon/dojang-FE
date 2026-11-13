@@ -2,7 +2,9 @@ import { BENEFIT_ICONS, PLACE_ICONS, type BenefitIconKind, type PlaceIconKind } 
 import { InsetIcon } from '../InsetIcon'
 
 /** 복지 타일 — 연파랑 원 + 22px 아이콘 (Figma: 복지 타일) */
-export function BenefitTile({ kind }: { kind: BenefitIconKind }) {
+export function BenefitTile({ kind }: { kind?: BenefitIconKind }) {
+  // 아이콘 종류가 없으면 숨김 (judge category null)
+  if (!kind) return null
   return (
     <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-100">
       <InsetIcon {...BENEFIT_ICONS[kind]} className="size-[22px]" />

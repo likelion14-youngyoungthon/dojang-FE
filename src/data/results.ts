@@ -74,8 +74,12 @@ export interface Document {
 export interface Reason {
   condition: string
   criteria: string
-  /** 내 상황 칸 — 상황 값에서 채움 */
-  field: 'age' | 'disability' | 'income'
+  /** 내 상황 칸 — 상황 값에서 채움 (Figma 예시) */
+  field?: 'age' | 'disability' | 'income'
+  /** 내 상황 칸 — judge conditions[].value (있으면 이 값) */
+  value?: string | null
+  /** 판정 — judge conditions[].met: true 맞아요 · false 맞지 않아요 · null 확인 필요 (예시 값은 없음 = 맞아요) */
+  met?: boolean | null
 }
 
 export interface Evidence {
@@ -111,7 +115,8 @@ export type Verdict = 'ok' | 'check'
 export interface Benefit {
   id: string
   name: string
-  icon: BenefitIconKind
+  /** 복지 아이콘 — judge category. 없으면 숨김 */
+  icon?: BenefitIconKind
   summary: string
   /** 주황색으로 덧붙는 확인할 것 */
   checkNote?: string
@@ -120,12 +125,15 @@ export interface Benefit {
   officeId: string | null
   detail?: {
     amount?: { label: string; value: string }[]
-    rows: { label: string; value: string }[]
+    /** 없으면 기본 요약(무엇을 · 접수처) */
+    rows?: { label: string; value: string }[]
     reasons: Reason[]
     evidence: { source: string; checkedAt: string; items: Evidence[] } | null
     onlineUrl?: string
   }
   documents?: Document[]
+  /** 받는 것 — judge benefit: 큰 글자 amount / 작은 글자 note (대응표 8번) */
+  benefitAmount?: { amount: string; note: string | null } | null
   /** 창구에서 쓰는 신청서 이름 (judge form_names). 없으면 '서비스명 신청서' */
   formNames?: string[]
   /** 제목 아래 한 줄 설명 (큰 글씨·쉬운 말) */
@@ -355,21 +363,6 @@ export type StatusTab = (typeof STATUS_TABS)[number]['value']
 // 서버 필드(category·short_desc 등)가 [추가 예정]이라 같은 서비스의 Figma 예시 값을 빌려 씀
 // ─────────────────────────────────────────────────────────────
 
-// ponytail: 서버 id → Figma 예시 id 다리. judge에 category·short_desc·description이 생기면 지우기
-const EXAMPLE_ID: Record<string, string> = {
-  dev_rehab_voucher: 'rehab-voucher',
-  family_care_support: 'family-care',
-  dd_parent_counsel: 'parent-counsel',
-  dd_individual_plan: 'support-plan',
-  disabled_childcare_fee: 'childcare-fee',
-  special_education: 'special-education',
-  special_transport: 'special-transport',
-  dd_family_rest: 'family-rest',
-  yongin_mobility_repair: 'assistive-repair',
-  activity_support: 'activity-support',
-  dd_day_activity: 'day-activity',
-}
-
 /** 대응표 6번: office.id → 장소 아이콘 */
 const OFFICE_ICON: Record<string, PlaceIconKind> = { education_office: 'education', mobility_center: 'transport' }
 
@@ -405,19 +398,25 @@ export function toJudgeView(result: JudgeResult, apiOffices: ApiOffice[]): Judge
 
   const benefits: Benefit[] = items
     .filter((i) => !i.hidden && i.verdict !== 'not_eligible' && (i.status === 'apply' || i.status === 'check' || i.status === 'extra_form'))
-    .map((i) => {
-      const example = BENEFITS.find((b) => b.id === EXAMPLE_ID[i.id])
+    .map((i): Benefit => {
       const recruit = i.office.id === 'provider'
       return {
-        icon: 'care',
-        summary: '',
-        ...example,
         id: i.id,
-        name: example?.name ?? i.name,
+        name: i.name,
+        // 대응표 8번: judge 필드를 그대로 씀. null이면 숨김
+        icon: i.category && i.category in BENEFIT_ICONS ? (i.category as BenefitIconKind) : undefined,
+        summary: i.short_desc ?? '',
+        checkNote: i.check_reason ?? undefined,
+        tagline: i.description ?? undefined,
+        benefitAmount: i.benefit,
         status: recruit ? 'recruit' : i.status === 'apply' ? 'before' : 'check',
         officeId: recruit ? null : i.office.id,
+        detail: {
+          reasons: (i.conditions ?? []).map((c) => ({ condition: c.label, criteria: c.rule, value: c.value, met: c.met })),
+          evidence: null,
+        },
         // 26 가져갈 것: judge 결과 재사용 (대응표 1번)
-        documents: i.documents.map((name) => ({ name, note: example?.name ?? i.name })),
+        documents: i.documents.map((name) => ({ name, note: i.name })),
         formNames: i.form_names,
       }
     })
