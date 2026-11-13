@@ -9,22 +9,21 @@ import phoneIcon from '../../assets/icons/phone.svg'
 import plusIcon from '../../assets/icons/plus.svg'
 import { PageTitle, ResultsLayout } from '../../components/results/ResultsLayout'
 import { PlaceTile } from '../../components/results/Tiles'
-import { OFFICES } from '../../data/results'
 import { useResults } from '../../results/ResultsContext'
 
 /** 21 접수처 위치 — 지도는 카카오맵 SDK 연동 전이라 Figma 그림으로 대신함 */
 export function LocationsPage() {
   const [params, setParams] = useSearchParams()
-  const { remaining } = useResults()
-  const selectedId = params.get('office') ?? OFFICES[0].id
-  const selected = OFFICES.find((o) => o.id === selectedId) ?? OFFICES[0]
+  const { remaining, offices } = useResults()
+  const selectedId = params.get('office') ?? offices[0]?.id
+  const selected = offices.find((o) => o.id === selectedId) ?? offices[0]
   const countAt = (id: string) => remaining.filter((b) => b.officeId === id).length
 
   return (
     <ResultsLayout
       back={{ label: '남은 신청', to: '/results' }}
       title={<PageTitle>접수처 위치</PageTitle>}
-      aside={OFFICES.map((office) => {
+      aside={offices.map((office) => {
         const active = office.id === selected.id
         return (
           <section
@@ -47,8 +46,8 @@ export function LocationsPage() {
               </span>
               <span className="text-14 text-text-sub">
                 {office.addressLines.map((line, i) => (
-                  <span key={line} className={i > 0 && office.id === 'transport' ? 'block' : ''}>
-                    {i > 0 && office.id !== 'transport' ? ' ' : ''}
+                  <span key={line} className={i > 0 && office.id === 'mobility_center' ? 'block' : ''}>
+                    {i > 0 && office.id !== 'mobility_center' ? ' ' : ''}
                     {line}
                   </span>
                 ))}

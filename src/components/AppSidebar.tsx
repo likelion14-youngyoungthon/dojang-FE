@@ -9,7 +9,7 @@ import menuLater24Icon from '../assets/icons/menu-later-24.svg'
 import menuRemainingOffIcon from '../assets/icons/menu-remaining-off.svg'
 import menuRemainingIcon from '../assets/icons/menu-remaining.svg'
 import menuRemaining24Icon from '../assets/icons/menu-remaining-24.svg'
-import { BENEFIT_ICONS, LATER_BENEFITS } from '../data/results'
+import { BENEFIT_ICONS } from '../data/results'
 import { regItemIcon, useRegItems } from '../api/regItems'
 import { SEPARATE_APPLICATIONS, WELFARE_ICONS } from '../data/welfare'
 import { useResults } from '../results/ResultsContext'
@@ -111,7 +111,7 @@ function ResultsNav() {
   const { mode } = useSession()
   const { situation } = useSituation()
   const { items: regItems } = useRegItems()
-  const { remaining, applied } = useResults()
+  const { remaining, applied, later } = useResults()
   const [expanded, setExpanded] = useState(false)
   const large = mode === '큰 글씨'
   const showCount = mode === '기본'
@@ -220,7 +220,7 @@ function ResultsNav() {
         label="나중에 가능"
         icon={{ on: menuLaterIcon, off: large ? menuLater24Icon : menuLaterIcon, large: menuLater24Icon }}
         active={false}
-        count={LATER_BENEFITS.length}
+        count={later.length}
         large={large}
         showCount={showCount}
       />

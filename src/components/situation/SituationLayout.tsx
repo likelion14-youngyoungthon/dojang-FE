@@ -13,6 +13,8 @@ interface SituationLayoutProps {
   title: string
   /** 마지막 단계의 "결과 보기" 등 다음 버튼 동작을 바꿀 때 */
   onNext?: () => void
+  /** 다음 버튼 동작이 진행 중 (결과 보기 판정 요청 등) */
+  nextBusy?: boolean
   children: ReactNode
 }
 
@@ -20,7 +22,7 @@ interface SituationLayoutProps {
  * 2 상황 알려 주기 공통 레이아웃 (Figma: 사이드바 264 + 본문)
  * 본문 최대 폭 1120 · 1280 미만에서는 "내 상황" 카드가 본문 아래로 내려감
  */
-export function SituationLayout({ step, title, onNext, children }: SituationLayoutProps) {
+export function SituationLayout({ step, title, onNext, nextBusy = false, children }: SituationLayoutProps) {
   const navigate = useNavigate()
   const { situation } = useSituation()
   const canNext = isStepComplete(step, situation)
@@ -63,11 +65,11 @@ export function SituationLayout({ step, title, onNext, children }: SituationLayo
                 <button
                   type="button"
                   onClick={goNext}
-                  disabled={!canNext}
+                  disabled={!canNext || nextBusy}
                   aria-describedby="next-hint"
                   className="flex h-14 w-40 shrink-0 items-center justify-center rounded-xl bg-primary px-6 text-17 font-bold text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:bg-border disabled:text-text-sub"
                 >
-                  {isLast ? '결과 보기' : '다음'}
+                  {nextBusy ? '정리하는 중' : isLast ? '결과 보기' : '다음'}
                 </button>
               </div>
             </div>

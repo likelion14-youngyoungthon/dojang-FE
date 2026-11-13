@@ -17,6 +17,8 @@ import placeEducationIcon from '../assets/icons/place/education-white.svg'
 import placeOfficeIcon from '../assets/icons/place/office-white.svg'
 import placeRecruitIcon from '../assets/icons/place/recruit-white.svg'
 import placeTransportIcon from '../assets/icons/place/transport-white.svg'
+import type { JudgeResult } from '../api/judge'
+import type { ApiOffice } from '../api/offices'
 
 // ─────────────────────────────────────────────────────────────
 // TODO: POST /judge · GET /offices 결과로 교체. 지금은 Figma "3 결과" 예시 값
@@ -56,9 +58,9 @@ export interface Office {
 }
 
 export const OFFICES: Office[] = [
-  { id: 'baekam', name: '백암면 행정복지센터', kind: '행정복지센터', icon: 'office', phone: '031-6193-5792', addressLines: ['경기도 용인시 처인구', '백암면 백암로 189'] },
-  { id: 'education', name: '용인교육지원청', kind: '교육지원청', icon: 'education', phone: '031-8020-9113', addressLines: ['경기도 용인시 처인구', '중부대로1161번길 69'] },
-  { id: 'transport', name: '용인시 교통약자이동지원센터', kind: '이동지원센터', icon: 'transport', phone: '1666-0420', addressLines: ['경기도 용인시 처인구 동백죽전대로 61', '(용인미르스타디움)'] },
+  { id: 'dong_center', name: '백암면 행정복지센터', kind: '행정복지센터', icon: 'office', phone: '031-6193-5792', addressLines: ['경기도 용인시 처인구', '백암면 백암로 189'] },
+  { id: 'education_office', name: '용인교육지원청', kind: '교육지원청', icon: 'education', phone: '031-8020-9113', addressLines: ['경기도 용인시 처인구', '중부대로1161번길 69'] },
+  { id: 'mobility_center', name: '용인시 교통약자이동지원센터', kind: '이동지원센터', icon: 'transport', phone: '1666-0420', addressLines: ['경기도 용인시 처인구 동백죽전대로 61', '(용인미르스타디움)'] },
 ]
 
 export interface Document {
@@ -151,7 +153,7 @@ export const BENEFITS: Benefit[] = [
     icon: 'therapy',
     summary: '월 18만원 · 본인부담 8만원',
     status: 'before',
-    officeId: 'baekam',
+    officeId: 'dong_center',
     detail: {
       amount: [
         { label: '지원 금액', value: '18' },
@@ -188,10 +190,10 @@ export const BENEFITS: Benefit[] = [
       { name: '장애 진단서', note: '발달재활서비스 바우처 · 9세 미만은 의뢰서와 검사자료로 대신할 수 있어요' },
     ],
   },
-  { id: 'family-care', name: '장애아가족양육지원', icon: 'care', summary: '아이돌봄 지원', status: 'before', officeId: 'baekam' },
-  { id: 'parent-counsel', name: '발달장애인 부모상담지원', icon: 'counsel', summary: '부모 상담 12개월', status: 'before', officeId: 'baekam' },
-  { id: 'support-plan', name: '발달장애인 개인별지원계획', icon: 'counsel', summary: '필요한 지원 계획 세우기', status: 'before', officeId: 'baekam' },
-  { id: 'childcare-fee', name: '장애아 보육료 지원', icon: 'childcare', summary: '장애아반 월 634,000원', status: 'before', officeId: 'baekam' },
+  { id: 'family-care', name: '장애아가족양육지원', icon: 'care', summary: '아이돌봄 지원', status: 'before', officeId: 'dong_center' },
+  { id: 'parent-counsel', name: '발달장애인 부모상담지원', icon: 'counsel', summary: '부모 상담 12개월', status: 'before', officeId: 'dong_center' },
+  { id: 'support-plan', name: '발달장애인 개인별지원계획', icon: 'counsel', summary: '필요한 지원 계획 세우기', status: 'before', officeId: 'dong_center' },
+  { id: 'childcare-fee', name: '장애아 보육료 지원', icon: 'childcare', summary: '장애아반 월 634,000원', status: 'before', officeId: 'dong_center' },
   {
     id: 'special-education',
     name: '특수교육대상자 선정·배치',
@@ -199,7 +201,7 @@ export const BENEFITS: Benefit[] = [
     summary: '만 3~17세 의무교육',
     checkNote: '진단평가',
     status: 'check',
-    officeId: 'education',
+    officeId: 'education_office',
   },
   {
     id: 'special-transport',
@@ -208,7 +210,7 @@ export const BENEFITS: Benefit[] = [
     summary: '장애인 콜택시 1,700원부터',
     checkNote: '보행 어려움 서류',
     status: 'check',
-    officeId: 'transport',
+    officeId: 'mobility_center',
   },
   { id: 'family-rest', name: '발달장애인 가족휴식지원', icon: 'care', summary: '모집 시기 확인', status: 'recruit', officeId: null },
 
@@ -219,7 +221,7 @@ export const BENEFITS: Benefit[] = [
     icon: 'care',
     summary: '수리비의 절반 · 1년에 10만원까지',
     status: 'before',
-    officeId: 'baekam',
+    officeId: 'dong_center',
     tagline: '휠체어와 전동스쿠터 수리비를 도와줘요.',
     large: {
       gets: { label: '받는 돈', title: '수리비의 절반', sub: '1년에 10만원까지' },
@@ -233,7 +235,7 @@ export const BENEFITS: Benefit[] = [
     icon: 'care',
     summary: '월 이용권 · 6~64세',
     status: 'before',
-    officeId: 'baekam',
+    officeId: 'dong_center',
     tagline: '도와주는 사람이 집에 와서 집안일과 외출을 도와줘요.',
     detail: {
       rows: [
@@ -294,7 +296,7 @@ export const BENEFITS: Benefit[] = [
     icon: 'care',
     summary: '낮 활동 · 한 달 132시간 또는 176시간',
     status: 'before',
-    officeId: 'baekam',
+    officeId: 'dong_center',
     tagline: '낮에 사람들과 함께 활동하는 서비스예요.',
     easy: {
       groups: [
@@ -342,5 +344,102 @@ export const STATUS_TABS = [
 ] as const
 export type StatusTab = (typeof STATUS_TABS)[number]['value']
 
-export const getOffice = (id: string | null) => OFFICES.find((o) => o.id === id) ?? null
-export const getBenefit = (id: string | undefined) => BENEFITS.find((b) => b.id === id) ?? null
+// ─────────────────────────────────────────────────────────────
+// POST /judge 결과 → 화면 데이터
+// 서버가 정하는 것: 보이는 항목·상태·접수처. 아이콘·한 줄 설명·상세 내용은
+// 서버 필드(category·short_desc 등)가 [추가 예정]이라 같은 서비스의 Figma 예시 값을 빌려 씀
+// ─────────────────────────────────────────────────────────────
+
+// ponytail: 서버 id → Figma 예시 id 다리. judge에 category·short_desc·description이 생기면 지우기
+const EXAMPLE_ID: Record<string, string> = {
+  dev_rehab_voucher: 'rehab-voucher',
+  family_care_support: 'family-care',
+  dd_parent_counsel: 'parent-counsel',
+  dd_individual_plan: 'support-plan',
+  disabled_childcare_fee: 'childcare-fee',
+  special_education: 'special-education',
+  special_transport: 'special-transport',
+  dd_family_rest: 'family-rest',
+  yongin_mobility_repair: 'assistive-repair',
+  activity_support: 'activity-support',
+  dd_day_activity: 'day-activity',
+}
+
+/** 대응표 6번: office.id → 장소 아이콘 */
+const OFFICE_ICON: Record<string, PlaceIconKind> = { education_office: 'education', mobility_center: 'transport' }
+
+export interface LaterBenefit {
+  name: string
+  /** 이 나이부터 */
+  age: number
+}
+
+export interface JudgeView {
+  /** 남은 신청 (신청 전 · 확인 필요 · 추가 서류 · 공고 대기) */
+  benefits: Benefit[]
+  /** 남은 신청이 있는 접수처 — GET /offices 순서 */
+  offices: Office[]
+  /** 나중에 가능 — 나이 순 */
+  later: LaterBenefit[]
+}
+
+/** 서버 주소(경기도 용인시 처인구 백암면 백암로 189)를 두 줄로 */
+function splitAddress(address: string | null | undefined) {
+  if (!address) return []
+  const m = address.match(/^(\S+ \S+ \S+구) (.+)$/)
+  return m ? [m[1], m[2]] : [address]
+}
+
+/** apiOffices: GET /offices?dong= (주소). judge office에는 이름·전화만 있음 */
+export function toJudgeView(result: JudgeResult, apiOffices: ApiOffice[]): JudgeView {
+  const items = Object.values(result)
+  const later = items
+    .filter((i) => i.verdict === 'not_eligible' && i.eligible_from_age != null && !i.hidden)
+    .map((i) => ({ name: i.name, age: i.eligible_from_age! }))
+    .sort((a, b) => a.age - b.age)
+
+  const benefits: Benefit[] = items
+    .filter((i) => !i.hidden && i.verdict !== 'not_eligible' && (i.status === 'apply' || i.status === 'check' || i.status === 'extra_form'))
+    .map((i) => {
+      const example = BENEFITS.find((b) => b.id === EXAMPLE_ID[i.id])
+      const recruit = i.office.id === 'provider'
+      return {
+        icon: 'care',
+        summary: '',
+        ...example,
+        id: i.id,
+        name: example?.name ?? i.name,
+        status: recruit ? 'recruit' : i.status === 'apply' ? 'before' : 'check',
+        officeId: recruit ? null : i.office.id,
+      }
+    })
+
+  const used = new Set(benefits.map((b) => b.officeId).filter(Boolean))
+  const judgeOffice = new Map(items.map((i) => [i.office.id, i.office]))
+  const order = [...apiOffices.map((o) => o.id), ...judgeOffice.keys()]
+  const offices = [...new Set(order)]
+    .filter((id) => used.has(id))
+    .map((id): Office => {
+      const api = apiOffices.find((o) => o.id === id)
+      const name = api?.name ?? judgeOffice.get(id)?.name ?? id
+      return {
+        id,
+        name,
+        kind: id === 'dong_center' ? '행정복지센터' : name,
+        icon: OFFICE_ICON[id] ?? 'office',
+        phone: api?.phone ?? judgeOffice.get(id)?.phone ?? '',
+        addressLines: splitAddress(api?.address),
+      }
+    })
+
+  return { benefits, offices, later }
+}
+
+// ponytail: 지금 결과를 모듈 변수로 둬서 getBenefit·getOffice를 부르는 화면을 그대로 씀 (ResultsProvider가 채움)
+let live: JudgeView | null = null
+export const setLiveView = (view: JudgeView | null) => {
+  live = view
+}
+
+export const getOffice = (id: string | null) => (live?.offices ?? OFFICES).find((o) => o.id === id) ?? null
+export const getBenefit = (id: string | undefined) => (live?.benefits ?? BENEFITS).find((b) => b.id === id) ?? null
