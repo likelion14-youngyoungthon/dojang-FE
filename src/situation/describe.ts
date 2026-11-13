@@ -1,4 +1,3 @@
-import { getIncomeBrackets } from '../data/profileOptions'
 import type { Situation } from './SituationContext'
 
 // 상황을 아직 안 고른 채 결과 화면을 열었을 때 보여 줄 Figma 예시 값
@@ -14,8 +13,7 @@ export function describeDisability(s: Situation) {
 }
 
 export function describeIncome(s: Situation) {
-  const bracket = s.income && s.income !== 'unknown' ? getIncomeBrackets(s.householdSize).find((b) => b.value === s.income) : null
-  return bracket?.label ?? FALLBACK.income
+  return s.income && s.income !== 'unknown' && s.incomeLabel ? s.incomeLabel : FALLBACK.income
 }
 
 /** 남은 신청 제목 옆 한 줄 요약: 만 4세 · 자폐성 장애 · 백암면 */

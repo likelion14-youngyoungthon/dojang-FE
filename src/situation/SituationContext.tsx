@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import type { BasicLivelihood, IncomeBracket, Severity } from '../data/profileOptions'
+import type { IncomeBandId } from '../api/incomeBands'
+import type { BasicLivelihood, Severity } from '../data/profileOptions'
 import type { Gu } from '../data/regions'
 import type { ApplicationProgress } from '../data/welfare'
 import { readStorage, writeStorage } from '../lib/storage'
@@ -23,7 +24,9 @@ export interface Situation {
   separate: Record<string, ApplicationProgress>
   householdSize: number
   basicLivelihood: BasicLivelihood | null
-  income: IncomeBracket | null
+  income: IncomeBandId | null
+  /** 고른 소득 구간의 화면 글자 (월 643만 원 이하) — 가족 수가 바뀌면 12 화면에서 다시 맞춤 */
+  incomeLabel: string | null
 }
 
 const INITIAL_SITUATION: Situation = {
@@ -40,6 +43,7 @@ const INITIAL_SITUATION: Situation = {
   householdSize: 3,
   basicLivelihood: null,
   income: null,
+  incomeLabel: null,
 }
 
 interface SituationContextValue {

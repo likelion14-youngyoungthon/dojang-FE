@@ -1,4 +1,3 @@
-import { getIncomeBrackets } from '../data/profileOptions'
 import type { RegItem } from '../api/regItems'
 import { SEPARATE_APPLICATIONS } from '../data/welfare'
 import type { Situation } from './SituationContext'
@@ -27,9 +26,7 @@ export function summarize(s: Situation, regItems: RegItem[]): SummaryRow[] {
   const household = s.basicLivelihood
     ? [
         [`${s.householdSize}명`, LIVELIHOOD_TEXT[s.basicLivelihood]].filter(Boolean).join(' · '),
-        ...(s.income && s.income !== 'unknown'
-          ? [getIncomeBrackets(s.householdSize).find((b) => b.value === s.income)!.label]
-          : []),
+        ...(s.income && s.income !== 'unknown' && s.incomeLabel ? [s.incomeLabel] : []),
       ]
     : null
 
