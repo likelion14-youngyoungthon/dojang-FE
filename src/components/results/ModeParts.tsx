@@ -19,12 +19,12 @@ export function LargeBlockView({ label, title, sub }: LargeBlock) {
 }
 
 /** 그림 문장 한 줄 (Figma: 그림 문장 행) — lg는 72px 그림 칸, md는 56px */
-export function EasyRow({ icon, text, size = 'lg' }: { icon: EasyIconKind; text: string; size?: 'lg' | 'md' }) {
+export function EasyRow({ icon, text, size = 'lg' }: { icon?: EasyIconKind; text: string; size?: 'lg' | 'md' }) {
   const lg = size === 'lg'
   return (
     <li className={`flex items-center ${lg ? 'gap-5' : 'gap-4'}`}>
       <span className={`flex shrink-0 items-center justify-center bg-primary-100 ${lg ? 'size-[72px] rounded-2xl' : 'size-14 rounded-[14px]'}`}>
-        <img src={EASY_ICONS[icon]} alt="" className={lg ? 'size-9' : 'size-7'} />
+        {icon && <img src={EASY_ICONS[icon]} alt="" className={lg ? 'size-9' : 'size-7'} />}
       </span>
       <p className={`font-medium text-text-strong ${lg ? 'text-22' : 'text-19'}`}>{text}</p>
     </li>

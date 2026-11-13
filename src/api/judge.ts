@@ -32,6 +32,14 @@ export interface JudgeItem {
   conditions: { key: string; label: string; rule: string; value: string | null; met: boolean | null }[] | null
   /** 문자·온라인 모드 — 복지로 온라인 신청 근거가 있으면 true */
   online: boolean
+  /** 쉬운 말 모드 — 없으면 null (그 서비스는 쉬운 말 대신 기본 상세) */
+  easy: {
+    summary: string
+    groups: { title: string; items: { icon: string; text: string }[] }[]
+    steps: string[]
+    /** '어려운 말' 카드 */
+    terms: { word: string; meaning: string }[]
+  } | null
 }
 
 /** data는 배열이 아니라 서비스 id를 키로 한 객체 (순서 유지) */

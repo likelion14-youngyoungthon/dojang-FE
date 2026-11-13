@@ -152,10 +152,13 @@ export interface Benefit {
     form: string[]
     reasons: { condition: string; criteria: string; mine: string; verdict: Verdict }[]
   }
-  /** 쉬운 말 화면 (Figma M3) — TODO: 서버 필드 easy_sentences(쉬운 말 문장) 추가 필요 */
+  /** 쉬운 말 화면 (Figma M3) — 판정 결과는 judge easy로 채움 */
   easy?: {
-    groups: { title: string; items: { icon: EasyIconKind; text: string }[] }[]
-    glossary?: { word: string; meaning: string }
+    /** 제목 아래 쉬운 말 한 줄 (judge easy.summary) */
+    summary?: string
+    groups: { title: string; items: { icon?: EasyIconKind; text: string }[] }[]
+    /** '어려운 말' 카드 (judge easy.terms) */
+    glossary?: { word: string; meaning: string }[]
   }
 }
 
@@ -300,7 +303,7 @@ export const BENEFITS: Benefit[] = [
           ],
         },
       ],
-      glossary: { word: '이용권', meaning: '정해진 곳에서 돈 대신 쓰는 표예요.' },
+      glossary: [{ word: '이용권', meaning: '정해진 곳에서 돈 대신 쓰는 표예요.' }],
     },
   },
   {
@@ -329,7 +332,7 @@ export const BENEFITS: Benefit[] = [
         },
         { title: '알아 두세요', items: [{ icon: 'hourglass', text: '자리가 없으면 기다려야 해요.' }] },
       ],
-      glossary: { word: '이용권', meaning: '정해진 곳에서 돈 대신 쓰는 표예요.' },
+      glossary: [{ word: '이용권', meaning: '정해진 곳에서 돈 대신 쓰는 표예요.' }],
     },
   },
 ]
@@ -362,6 +365,12 @@ export type StatusTab = (typeof STATUS_TABS)[number]['value']
 // 서버가 정하는 것: 보이는 항목·상태·접수처. 아이콘·한 줄 설명·상세 내용은
 // 서버 필드(category·short_desc 등)가 [추가 예정]이라 같은 서비스의 Figma 예시 값을 빌려 씀
 // ─────────────────────────────────────────────────────────────
+
+/** 서버 쉬운 말 그림 이름(user_check) → 화면 그림 이름(userCheck). 없는 그림은 숨김 */
+function easyIcon(name: string): EasyIconKind | undefined {
+  const key = name.replace(/_(\w)/g, (_, c: string) => c.toUpperCase())
+  return key in EASY_ICONS ? (key as EasyIconKind) : undefined
+}
 
 /** 온라인 신청 안내 주소 — Figma 예시와 같은 복지로 첫 화면 */
 const BOKJIRO_URL = 'https://www.bokjiro.go.kr'
@@ -423,6 +432,14 @@ export function toJudgeView(result: JudgeResult, apiOffices: ApiOffice[]): Judge
         // 26 가져갈 것: judge 결과 재사용 (대응표 1번)
         documents: i.documents.map((name) => ({ name, note: i.name })),
         formNames: i.form_names,
+        // 쉬운 말 모드: judge easy (없으면 기본 상세)
+        easy: i.easy
+          ? {
+              summary: i.easy.summary,
+              groups: i.easy.groups.map((g) => ({ title: g.title, items: g.items.map((it) => ({ icon: easyIcon(it.icon), text: it.text })) })),
+              glossary: i.easy.terms,
+            }
+          : undefined,
       }
     })
 
