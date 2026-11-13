@@ -3,7 +3,8 @@ import { ChoiceButton } from '../components/situation/ChoiceButton'
 import { Field } from '../components/situation/Field'
 import { RadioCard } from '../components/situation/RadioCard'
 import { SituationLayout } from '../components/situation/SituationLayout'
-import { DONGS_BY_GU, GU_LIST, getOffice } from '../data/regions'
+import { useDongs } from '../api/dongs'
+import { getOffice } from '../data/regions'
 import { useSituation, type Applicant } from '../situation/SituationContext'
 
 const APPLICANTS: Applicant[] = ['본인', '가족·보호자']
@@ -13,12 +14,23 @@ export function PlacePage() {
   const { situation, update } = useSituation()
   const { gu, dong, applicant } = situation
   const office = gu && dong ? getOffice(gu, dong) : null
+  const { byGu, loading, error, retry } = useDongs()
 
   return (
     <SituationLayout step={1} title="사는 곳과 쓰는 분을 알려 주세요">
       <Field id="place-title" title="사는 곳">
+        {loading && <p className="text-15 text-text-sub">읍면동 목록을 불러오는 중이에요</p>}
+        {error && (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-15 text-text-sub">읍면동 목록을 불러오지 못했어요. {error}</p>
+            <button type="button" onClick={retry} className="text-15 font-medium text-primary underline">
+              다시 시도
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-2">
-          {GU_LIST.map((g) => (
+          {[...byGu.keys()].map((g) => (
             <ChoiceButton key={g} selected={gu === g} onClick={() => update({ gu: g, dong: null })}>
               {g}
             </ChoiceButton>
@@ -27,7 +39,7 @@ export function PlacePage() {
 
         {gu && (
           <div className="flex flex-wrap gap-2" aria-label={`${gu} 읍면동`}>
-            {DONGS_BY_GU[gu].map((d) => (
+            {(byGu.get(gu) ?? []).map((d) => (
               <ChoiceButton key={d} size="chip" selected={dong === d} onClick={() => update({ dong: d })}>
                 {d}
               </ChoiceButton>
