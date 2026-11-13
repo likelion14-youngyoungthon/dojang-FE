@@ -10,7 +10,8 @@ import menuRemainingOffIcon from '../assets/icons/menu-remaining-off.svg'
 import menuRemainingIcon from '../assets/icons/menu-remaining.svg'
 import menuRemaining24Icon from '../assets/icons/menu-remaining-24.svg'
 import { BENEFIT_ICONS, LATER_BENEFITS } from '../data/results'
-import { REGISTRATION_BUNDLE, SEPARATE_APPLICATIONS, WELFARE_ICONS } from '../data/welfare'
+import { regItemIcon, useRegItems } from '../api/regItems'
+import { SEPARATE_APPLICATIONS, WELFARE_ICONS } from '../data/welfare'
 import { useResults } from '../results/ResultsContext'
 import { formatMonthDay } from '../results/progress'
 import { useSession } from '../session/SessionContext'
@@ -109,6 +110,7 @@ function ResultsNav() {
   const { pathname } = useLocation()
   const { mode } = useSession()
   const { situation } = useSituation()
+  const { items: regItems } = useRegItems()
   const { remaining, applied } = useResults()
   const [expanded, setExpanded] = useState(false)
   const large = mode === '큰 글씨'
@@ -123,10 +125,10 @@ function ResultsNav() {
       sub: `${formatMonthDay(submittedAt)} 신청`,
       to: `/history/${benefit.id}`,
     })),
-    ...REGISTRATION_BUNDLE.filter((w) => situation.bundle.includes(w.id)).map((w) => ({
+    ...regItems.filter((w) => situation.bundle.includes(w.id)).map((w) => ({
       key: w.id,
-      name: w.name,
-      icon: WELFARE_ICONS[w.icon],
+      name: w.easy_label,
+      icon: WELFARE_ICONS[regItemIcon(w.category)],
       sub: '등록 때 신청',
       to: null,
     })),

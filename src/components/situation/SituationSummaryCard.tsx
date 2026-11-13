@@ -3,6 +3,7 @@ import checkWhiteIcon from '../../assets/icons/check-white-16.svg'
 import chevronDownIcon from '../../assets/icons/chevron-down-white.svg'
 import circleEmptyIcon from '../../assets/icons/circle-empty-white.svg'
 import sealPatternIcon from '../../assets/icons/seal-pattern.svg'
+import { useRegItems } from '../../api/regItems'
 import { useSituation } from '../../situation/SituationContext'
 import { summarize } from '../../situation/summary'
 
@@ -10,7 +11,8 @@ import { summarize } from '../../situation/summary'
 export function SituationSummaryCard() {
   const { situation } = useSituation()
   const [open, setOpen] = useState(true)
-  const rows = summarize(situation)
+  const { items: regItems } = useRegItems()
+  const rows = summarize(situation, regItems)
   const filled = rows.filter((r) => r.lines).length
 
   return (

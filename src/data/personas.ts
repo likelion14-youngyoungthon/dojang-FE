@@ -55,7 +55,7 @@ export const PERSONAS: Persona[] = [
       severity: '심한 장애',
       circumstances: ['어린이집에 다녀요'],
       // Figma 4세 예시: 등록 때 신청 2건
-      bundle: ['reduction', 'parking'],
+      bundle: ['fee_reductions_7', 'parking_sticker'],
       householdSize: 3,
       basicLivelihood: '해당 없어요',
       income: 'under180',

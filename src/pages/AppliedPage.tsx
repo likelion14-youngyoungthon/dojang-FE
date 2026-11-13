@@ -5,16 +5,18 @@ import { Field } from '../components/situation/Field'
 import { SeparateApplicationsModal } from '../components/situation/SeparateApplicationsModal'
 import { SituationLayout } from '../components/situation/SituationLayout'
 import { WelfareIcon } from '../components/situation/WelfareIcon'
-import { REGISTRATION_BUNDLE, SEPARATE_APPLICATIONS } from '../data/welfare'
+import { regItemIcon, useRegItems } from '../api/regItems'
+import { SEPARATE_APPLICATIONS } from '../data/welfare'
 import { useSituation } from '../situation/SituationContext'
 
 const UNKNOWN = 'unknown'
 
-/** 3/4 · 10 이미 신청한 것 — "있어요"를 고르면 모달에서 목록과 상태를 고름 */
+/** 3/4 · 10 이미 신청한 것 (API: GET /reg-items) — "있어요"를 고르면 모달에서 목록과 상태를 고름 */
 export function AppliedPage() {
   const { situation, update } = useSituation()
   const { bundle, hasSeparate, separate } = situation
   const [modalOpen, setModalOpen] = useState(false)
+  const regItems = useRegItems()
   const chosen = SEPARATE_APPLICATIONS.filter((w) => w.id in separate)
 
   const toggleBundle = (id: string) => {
@@ -26,14 +28,23 @@ export function AppliedPage() {
   return (
     <SituationLayout step={3} title="이미 신청한 것을 알려 주세요">
       <Field id="bundle-title" title="장애 등록할 때 같이 신청한 것">
+        {regItems.loading && <p className="text-15 text-text-sub">목록을 불러오는 중이에요</p>}
+        {regItems.error && (
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-15 text-text-sub">목록을 불러오지 못했어요. {regItems.error}</p>
+            <button type="button" onClick={regItems.retry} className="text-15 font-medium text-primary underline">
+              다시 시도
+            </button>
+          </div>
+        )}
         <div className="grid items-start gap-2 sm:grid-cols-2">
-          {REGISTRATION_BUNDLE.map((item) => (
+          {regItems.items.map((item) => (
             <CheckCard
               key={item.id}
               checked={bundle.includes(item.id)}
-              label={item.name}
-              sub={item.official}
-              icon={item.icon}
+              label={item.easy_label}
+              sub={item.label}
+              icon={regItemIcon(item.category)}
               onToggle={() => toggleBundle(item.id)}
             />
           ))}
