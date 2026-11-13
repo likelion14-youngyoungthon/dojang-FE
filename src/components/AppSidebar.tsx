@@ -11,7 +11,8 @@ import menuRemainingIcon from '../assets/icons/menu-remaining.svg'
 import menuRemaining24Icon from '../assets/icons/menu-remaining-24.svg'
 import { BENEFIT_ICONS } from '../data/results'
 import { regItemIcon, useRegItems } from '../api/regItems'
-import { SEPARATE_APPLICATIONS, WELFARE_ICONS } from '../data/welfare'
+import { categoryIcon, useServiceList } from '../api/services'
+import { WELFARE_ICONS } from '../data/welfare'
 import { useResults } from '../results/ResultsContext'
 import { formatMonthDay } from '../results/progress'
 import { useSession } from '../session/SessionContext'
@@ -111,6 +112,7 @@ function ResultsNav() {
   const { mode } = useSession()
   const { situation } = useSituation()
   const { items: regItems } = useRegItems()
+  const { items: services } = useServiceList(situation.age)
   const { remaining, applied, later } = useResults()
   const [expanded, setExpanded] = useState(false)
   const large = mode === '큰 글씨'
@@ -122,7 +124,7 @@ function ResultsNav() {
       key: benefit.id,
       name: benefit.name,
       icon: benefit.icon ? BENEFIT_ICONS[benefit.icon] : null,
-      sub: `${formatMonthDay(submittedAt)} 신청`,
+      sub: `${formatMonthDay(submittedAt)} 신청`.trim(),
       to: `/history/${benefit.id}`,
     })),
     ...regItems.filter((w) => situation.bundle.includes(w.id)).map((w) => ({
@@ -132,10 +134,10 @@ function ResultsNav() {
       sub: '등록 때 신청',
       to: null,
     })),
-    ...SEPARATE_APPLICATIONS.filter((w) => situation.separate[w.id]).map((w) => ({
+    ...services.filter((w) => situation.separate[w.id]).map((w) => ({
       key: w.id,
       name: w.name,
-      icon: WELFARE_ICONS[w.icon],
+      icon: categoryIcon(w.category) ? WELFARE_ICONS[categoryIcon(w.category)!] : null,
       sub: situation.separate[w.id],
       to: null,
     })),

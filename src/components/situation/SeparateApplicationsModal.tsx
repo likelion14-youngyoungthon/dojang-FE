@@ -1,10 +1,13 @@
 import { useState } from 'react'
-import { SEPARATE_APPLICATIONS, type ApplicationProgress } from '../../data/welfare'
+import { categoryIcon, type ServiceItem } from '../../api/services'
+import type { ApplicationProgress } from '../../data/welfare'
 import { Modal } from '../Modal'
 import { CheckCard } from './CheckCard'
 import { StatusSegment } from './StatusSegment'
 
 interface SeparateApplicationsModalProps {
+  /** GET /services?age= 목록 */
+  services: { items: ServiceItem[]; loading: boolean; error: string | null; retry: () => void }
   initial: Record<string, ApplicationProgress>
   onCancel: () => void
   onDone: (selected: Record<string, ApplicationProgress>) => void
@@ -15,7 +18,7 @@ function pairs<T>(list: T[]) {
 }
 
 /** 3/4 "그것 말고 따로 신청한 것" — 있어요를 고르면 뜨는 모달. 고른 것마다 지금 상태도 고름 */
-export function SeparateApplicationsModal({ initial, onCancel, onDone }: SeparateApplicationsModalProps) {
+export function SeparateApplicationsModal({ services, initial, onCancel, onDone }: SeparateApplicationsModalProps) {
   const [draft, setDraft] = useState(initial)
   const count = Object.keys(draft).length
 
@@ -36,11 +39,20 @@ export function SeparateApplicationsModal({ initial, onCancel, onDone }: Separat
         <p className="text-15 text-text-sub">여러 개 고를 수 있어요. 고른 것은 지금 상태도 알려 주세요.</p>
       </div>
 
+      {services.loading && <p className="text-15 text-text-sub">목록을 불러오는 중이에요</p>}
+      {services.error && (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-15 text-text-sub">목록을 불러오지 못했어요. {services.error}</p>
+          <button type="button" onClick={services.retry} className="text-15 font-medium text-primary underline">
+            다시 시도
+          </button>
+        </div>
+      )}
       <div className="grid items-start gap-2 sm:grid-cols-2">
-        {pairs(SEPARATE_APPLICATIONS).map((row) => (
+        {pairs(services.items).map((row) => (
           <div key={row[0].id} className="contents">
             {row.map((item) => (
-              <CheckCard key={item.id} checked={item.id in draft} label={item.name} icon={item.icon} onToggle={() => toggle(item.id)} />
+              <CheckCard key={item.id} checked={item.id in draft} label={item.name} icon={categoryIcon(item.category)} onToggle={() => toggle(item.id)} />
             ))}
             {row
               .filter((item) => item.id in draft)

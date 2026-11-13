@@ -43,20 +43,28 @@ export function toDateString(iso: string) {
  */
 export function buildServices(
   judge: JudgeResult | null,
-  progress: Record<string, { stage: UserStatus; submittedAt: string }>,
+  progress: Record<string, { stage: UserStatus; submittedAt: string | null }>,
+  /** 10 '따로 신청한 것'에서 고른 상태 (신청일은 모름) */
+  separate: Record<string, UserStatus> = {},
 ): ServiceState[] {
+  const date = (iso: string | null) => (iso ? toDateString(iso) : null)
   const fromJudge = Object.values(judge ?? {})
     .filter((i) => !i.hidden && i.verdict !== 'not_eligible')
     .map((i): ServiceState => {
       const user = progress[i.id]
-      return user
-        ? { id: i.id, status: user.stage, submitted_at: toDateString(user.submittedAt) }
-        : { id: i.id, status: i.status, submitted_at: null }
+      if (user) return { id: i.id, status: user.stage, submitted_at: date(user.submittedAt) }
+      if (separate[i.id]) return { id: i.id, status: separate[i.id], submitted_at: null }
+      return { id: i.id, status: i.status, submitted_at: null }
     })
+  const listed = new Set(fromJudge.map((s) => s.id))
   const kept = Object.entries(progress)
-    .filter(([id]) => !fromJudge.some((s) => s.id === id))
-    .map(([id, p]): ServiceState => ({ id, status: p.stage, submitted_at: toDateString(p.submittedAt) }))
-  return [...fromJudge, ...kept]
+    .filter(([id]) => !listed.has(id))
+    .map(([id, p]): ServiceState => ({ id, status: p.stage, submitted_at: date(p.submittedAt) }))
+  kept.forEach((s) => listed.add(s.id))
+  const separateOnly = Object.entries(separate)
+    .filter(([id]) => !listed.has(id))
+    .map(([id, stage]): ServiceState => ({ id, status: stage, submitted_at: null }))
+  return [...fromJudge, ...kept, ...separateOnly]
 }
 
 export const getProgress = () => api.get<ProgressResponse>('/me/progress')

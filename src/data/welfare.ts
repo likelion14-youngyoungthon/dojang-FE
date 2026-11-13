@@ -40,18 +40,5 @@ export interface WelfareItem {
   icon: WelfareIconKind
 }
 
-/** 그것 말고 따로 신청하는 것 */
-export const SEPARATE_APPLICATIONS: WelfareItem[] = [
-  { id: 'child-allowance', name: '장애아동수당', icon: 'allowance' },
-  { id: 'rehab-voucher', name: '발달재활서비스 바우처', icon: 'therapy' },
-  { id: 'family-care', name: '장애아가족양육지원', icon: 'care' },
-  { id: 'parent-counsel', name: '발달장애인 부모상담지원', icon: 'counsel' },
-  { id: 'family-rest', name: '발달장애인 가족휴식지원', icon: 'care' },
-  { id: 'childcare-fee', name: '장애아 보육료 지원', icon: 'childcare' },
-  { id: 'special-education', name: '특수교육대상자 선정·배치', icon: 'education' },
-  { id: 'special-transport', name: '특별교통수단 이용등록', icon: 'transport' },
-  { id: 'sports-voucher', name: '장애인스포츠강좌이용권', icon: 'sports' },
-]
-
 export const APPLICATION_STATUSES = ['심사 대기 중', '결과 나옴', '이용 중'] as const
 export type ApplicationProgress = (typeof APPLICATION_STATUSES)[number]

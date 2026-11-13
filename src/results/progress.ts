@@ -3,7 +3,9 @@ import { getOffice, type Benefit } from '../data/results'
 import type { ProgressEntry } from './ResultsContext'
 
 /** 11월 12일 */
-export function formatMonthDay(iso: string) {
+export function formatMonthDay(iso: string | null) {
+  // 따로 신청한 것은 신청일을 모름
+  if (!iso) return ''
   const d = new Date(iso)
   return `${d.getMonth() + 1}월 ${d.getDate()}일`
 }

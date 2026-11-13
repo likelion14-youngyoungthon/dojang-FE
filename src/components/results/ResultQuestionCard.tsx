@@ -4,7 +4,7 @@ import { StageBar } from './StageBar'
 
 interface ResultQuestionCardProps {
   benefit: Benefit
-  submittedAt: string
+  submittedAt: string | null
   onAnswerYes: () => void
   onAnswerNotYet: () => void
 }
@@ -20,7 +20,7 @@ export function ResultQuestionCard({ benefit, submittedAt, onAnswerYes, onAnswer
         <h2 id="result-question-title" className="text-22 font-bold text-text-strong">
           {benefit.name}, 결과가 나왔나요?
         </h2>
-        <p className="text-17 text-text-sub">{formatMonthDay(submittedAt)} 신청 · 자격 심사 중</p>
+        <p className="text-17 text-text-sub">{`${formatMonthDay(submittedAt)} 신청`.trim()} · 자격 심사 중</p>
       </div>
       <StageBar filled={3} caption="3단계 자격 심사" />
       <div className="flex flex-wrap gap-2">

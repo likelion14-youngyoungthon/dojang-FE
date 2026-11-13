@@ -3,6 +3,7 @@ import { getToken } from '../api/client'
 import { fromJudgeRequest, postJudge, toJudgeRequest, type JudgeRequest, type JudgeResult } from '../api/judge'
 import { fetchOffices, type ApiOffice } from '../api/offices'
 import { buildServices, getProgress, putProgress, userStatusOf, type UserStatus } from '../api/progress'
+import type { ApplicationProgress } from '../data/welfare'
 import { getPersona } from '../data/personas'
 import { BENEFITS, DEFAULT_BENEFIT_IDS, LATER_BENEFITS, OFFICES, setLiveView, toJudgeView, type JudgeView } from '../data/results'
 import { readStorage, writeStorage } from '../lib/storage'
@@ -13,8 +14,8 @@ import { useSituation, type Situation } from '../situation/SituationContext'
 export type ProgressStage = UserStatus
 
 export interface ProgressEntry {
-  /** ISO 날짜 (서버에는 submitted_at YYYY-MM-DD로 저장) */
-  submittedAt: string
+  /** ISO 날짜 (서버에는 submitted_at YYYY-MM-DD로 저장). 모르면 null */
+  submittedAt: string | null
   stage: ProgressStage
 }
 
@@ -57,11 +58,18 @@ async function judgeWithOffices(request: JudgeRequest) {
   return { judge, offices }
 }
 
-/** PUT /me/progress — 로그인(토큰)했을 때만. 목록 통째로 저장 */
-function save(profile: JudgeRequest, judge: JudgeResult | null, progress: Record<string, ProgressEntry>) {
+/** 10 '따로 신청한 것' 상태 → 저장 값 (대응표 4번) */
+const SEPARATE_STATUS: Record<ApplicationProgress, UserStatus> = { '심사 대기 중': 'submitted', '결과 나옴': 'approved', '이용 중': 'in_use' }
+const separateStatuses = (s: Partial<Situation>) =>
+  Object.fromEntries(Object.entries(s.separate ?? {}).map(([id, label]) => [id, SEPARATE_STATUS[label]]))
+
+/** PUT /me/progress — 로그인(토큰)했을 때만. 목록 통째로 저장 (따로 신청한 것과 상태 포함) */
+function save(situation: Partial<Situation>, judge: JudgeResult | null, progress: Record<string, ProgressEntry>) {
   if (!getToken()) return
   // TODO: 저장 실패를 화면에 알릴 디자인이 없어 콘솔에만 남김
-  putProgress(profile, buildServices(judge, progress)).catch((e) => console.warn('신청 현황 저장 실패', e))
+  putProgress(toJudgeRequest(situation), buildServices(judge, progress, separateStatuses(situation))).catch((e) =>
+    console.warn('신청 현황 저장 실패', e),
+  )
 }
 
 export function ResultsProvider({ children }: { children: ReactNode }) {
@@ -83,7 +91,7 @@ export function ResultsProvider({ children }: { children: ReactNode }) {
         const progress: Record<string, ProgressEntry> = {}
         for (const s of services) {
           const stage = userStatusOf(s)
-          if (stage) progress[s.id] = { stage, submittedAt: s.submitted_at ? `${s.submitted_at}T00:00:00` : new Date().toISOString() }
+          if (stage) progress[s.id] = { stage, submittedAt: s.submitted_at ? `${s.submitted_at}T00:00:00` : null }
         }
         // 다른 기기에서 열면 상황 값이 비어 있으니 서버 profile로 채움 (구·누가·소득 글자는 서버에 없음)
         if (!situation.dong) replace(fromJudgeRequest(profile))
@@ -103,7 +111,7 @@ export function ResultsProvider({ children }: { children: ReactNode }) {
   // 낸 신청 고르기 · 상태 변경: 누를 때마다 PUT /me/progress
   const updateProgress = (next: Record<string, ProgressEntry>) => {
     setState((prev) => ({ ...prev, progress: next }))
-    save(toJudgeRequest(situation), state.judge, next)
+    save(situation, state.judge, next)
   }
   const submit = (ids: string[]) => {
     const submittedAt = new Date().toISOString()
@@ -128,7 +136,7 @@ export function ResultsProvider({ children }: { children: ReactNode }) {
     const request = toJudgeRequest(next)
     const { judge, offices } = await judgeWithOffices(request)
     setState((prev) => ({ ...prev, judge, offices }))
-    if (shouldSave) save(request, judge, state.progress)
+    if (shouldSave) save(next, judge, state.progress)
   }
   const clear = () => {
     setState(EMPTY)
@@ -154,12 +162,14 @@ export function useResults() {
   const mine = view?.benefits ?? BENEFITS.filter((b) => ids.includes(b.id))
   const offices = view?.offices ?? OFFICES
   const later = view?.later.map((l) => l.name) ?? LATER_BENEFITS
-  const remaining = mine.filter((b) => !ctx.progress[b.id])
+  // 화면 상태 = 저장 값(submitted·approved·in_use)이 있으면 그것 → 낸 신청과 '따로 신청한 것'은 남은 신청에서 뺌
+  const { situation } = useSituation()
+  const remaining = mine.filter((b) => !ctx.progress[b.id] && !situation.separate[b.id])
   // 신청 기록: 최근에 신청한 것부터
   const applied = mine
     .filter((b) => ctx.progress[b.id])
     .map((benefit) => ({ benefit, ...ctx.progress[benefit.id] }))
-    .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
+    .sort((a, b) => (b.submittedAt ?? '').localeCompare(a.submittedAt ?? ''))
 
   return { ...ctx, remaining, applied, offices, later }
 }

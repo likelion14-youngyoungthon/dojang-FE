@@ -6,18 +6,19 @@ import { SeparateApplicationsModal } from '../components/situation/SeparateAppli
 import { SituationLayout } from '../components/situation/SituationLayout'
 import { WelfareIcon } from '../components/situation/WelfareIcon'
 import { regItemIcon, useRegItems } from '../api/regItems'
-import { SEPARATE_APPLICATIONS } from '../data/welfare'
+import { categoryIcon, useServiceList } from '../api/services'
 import { useSituation } from '../situation/SituationContext'
 
 const UNKNOWN = 'unknown'
 
-/** 3/4 · 10 이미 신청한 것 (API: GET /reg-items) — "있어요"를 고르면 모달에서 목록과 상태를 고름 */
+/** 3/4 · 10 이미 신청한 것 (API: GET /reg-items · '있어요'를 고를 때 GET /services?age=) — "있어요"를 고르면 모달에서 목록과 상태를 고름 */
 export function AppliedPage() {
   const { situation, update } = useSituation()
   const { bundle, hasSeparate, separate } = situation
   const [modalOpen, setModalOpen] = useState(false)
   const regItems = useRegItems()
-  const chosen = SEPARATE_APPLICATIONS.filter((w) => w.id in separate)
+  const services = useServiceList(situation.age)
+  const chosen = services.items.filter((w) => w.id in separate)
 
   const toggleBundle = (id: string) => {
     if (id === UNKNOWN) return update({ bundle: bundle.includes(UNKNOWN) ? [] : [UNKNOWN] })
@@ -71,7 +72,7 @@ export function AppliedPage() {
             <ul className="flex flex-col gap-2">
               {chosen.map((item) => (
                 <li key={item.id} className="flex items-center gap-2.5">
-                  <WelfareIcon kind={item.icon} />
+                  {categoryIcon(item.category) && <WelfareIcon kind={categoryIcon(item.category)!} />}
                   <span className="text-17 font-medium text-text-strong">{item.name}</span>
                   <span className="flex-1" />
                   <span className="rounded-lg bg-primary-100 px-2 py-0.5 text-13 font-bold text-primary">{separate[item.id]}</span>
@@ -87,6 +88,7 @@ export function AppliedPage() {
 
       {modalOpen && (
         <SeparateApplicationsModal
+          services={services}
           initial={separate}
           onCancel={() => setModalOpen(false)}
           onDone={(selected) => {
