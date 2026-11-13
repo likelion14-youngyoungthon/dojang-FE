@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react'
+import { useBasis } from '../../api/basis'
+import { toJudgeRequest } from '../../api/judge'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import checkSuccessIcon from '../../assets/icons/check-success.svg'
 import { Card, CardHeader, KeyValueList } from '../../components/results/Card'
@@ -8,6 +10,7 @@ import { PageTitle, ResultsLayout } from '../../components/results/ResultsLayout
 import { BenefitTile } from '../../components/results/Tiles'
 import { StatusChip } from '../../components/StatusChip'
 import { getBenefit, getOffice, type Benefit, type Reason } from '../../data/results'
+import { useResults } from '../../results/ResultsContext'
 import { useSession } from '../../session/SessionContext'
 import { describeAge, describeDisability, describeIncome } from '../../situation/describe'
 import { useSituation } from '../../situation/SituationContext'
@@ -15,6 +18,15 @@ import { EasyDetail } from './detail/EasyDetail'
 import { LargeDetail } from './detail/LargeDetail'
 import { TextOnlineDetail } from './detail/TextOnlineDetail'
 import { EasyToggle } from './detail/EasyToggle'
+
+/** basis quotes[].matches → 화면 조건 이름 (judge conditions[].label과 같음) */
+const MATCH_LABEL: Record<string, string> = {
+  age: '나이',
+  disability_type: '장애 유형',
+  severity: '장애 정도',
+  income_band: '소득',
+  status: '수급',
+}
 
 /** 복지 상세 — 맞춤 화면에 따라 L2(기본) · M1 큰 글씨 · M2 문자·온라인 · M3 쉬운 말 */
 export function BenefitDetailPage() {
@@ -45,7 +57,22 @@ function DefaultDetail({ benefit, titleAside }: { benefit: Benefit; titleAside?:
     disability: describeDisability(situation),
     income: describeIncome(situation),
   }
-  const tagValue = (tag: string) => (tag === '나이' ? mine.age : tag === '장애 유형' ? mine.disability : mine.income)
+  // L2 왜 받을 수 있나요: GET /services/{id}/basis — 판정 결과 화면일 때만 (Figma 예시 화면은 예시 근거)
+  const { judge } = useResults()
+  const basis = useBasis(judge ? benefit.id : null, toJudgeRequest(situation))
+  const evidence = basis.data
+    ? {
+        source: basis.data.quotes.some((q) => q.source.includes('bokjiro.go.kr')) ? '복지로' : (basis.data.quotes[0]?.source ?? ''),
+        checkedAt: basis.data.quotes[0]?.checked_at ?? '',
+        items: basis.data.quotes.map((q) => ({ quote: [q.text], tag: MATCH_LABEL[q.matches] ?? q.matches, kind: q.section })),
+      }
+    : judge
+      ? null
+      : (detail?.evidence ?? null)
+  // 태그 옆 내 상황: judge conditions의 value (없으면 고른 상황)
+  const tagValue = (tag: string) =>
+    detail?.reasons.find((r) => r.condition === tag)?.value ??
+    (tag === '나이' ? mine.age : tag === '장애 유형' ? mine.disability : mine.income)
 
   return (
     <ResultsLayout
@@ -164,7 +191,7 @@ function DefaultDetail({ benefit, titleAside }: { benefit: Benefit; titleAside?:
         </Card>
       )}
 
-      <EvidenceCard evidence={detail?.evidence ?? null} tagValue={tagValue} />
+      <EvidenceCard evidence={evidence} tagValue={tagValue} failed={Boolean(basis.error)} />
     </ResultsLayout>
   )
 }

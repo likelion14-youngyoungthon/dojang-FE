@@ -85,7 +85,8 @@ export interface Reason {
 export interface Evidence {
   quote: string[]
   tag: string
-  kind: '지원대상' | '지원내용'
+  /** 원문 위치 — 지원대상 · 선정기준 · 지원내용 (basis quotes[].section) */
+  kind: string
 }
 
 /** 쉬운 말 그림 문장에 쓰는 그림 (Figma: 그림 칸) */
