@@ -37,7 +37,7 @@ export function bandText(band: IncomeBand, bands: IncomeBand[]): { label: string
 
 const cache = new Map<number, Promise<IncomeBands>>()
 /** GET /income-bands?household= — 가족 수마다 한 번만 부름 (실패하면 다음에 다시) */
-function fetchIncomeBands(household: number) {
+export function fetchIncomeBands(household: number) {
   let request = cache.get(household)
   if (!request) {
     request = api.get<IncomeBands>('/income-bands', { query: { household } }).catch((e) => {
