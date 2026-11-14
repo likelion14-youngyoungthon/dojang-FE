@@ -22,6 +22,8 @@ export function EvidenceCard({
 }) {
   const [open, setOpen] = useState(false)
   const searching = evidence === null
+  // 서버가 인용을 0개로 주는 서비스가 있음 (원문 데이터 없음)
+  const empty = evidence !== null && evidence.items.length === 0
 
   return (
     <Card>
@@ -31,11 +33,17 @@ export function EvidenceCard({
         <span className="flex h-[26px] items-center gap-1 rounded-lg bg-neutral-100 px-2 text-13 font-medium text-text">
           <img src={externalLinkIcon} alt="" width={14} height={14} />
           {/* TODO: 근거를 못 불러왔을 때 디자인이 없어 칩 글자만 바꿈 */}
-          {failed ? '근거를 불러오지 못했어요' : searching ? '복지로 · 찾는 중' : `${evidence.source} · ${evidence.checkedAt} 확인`}
+          {failed
+            ? '근거를 불러오지 못했어요'
+            : searching
+              ? '복지로 · 찾는 중'
+              : empty
+                ? '확인된 원문이 없어요'
+                : `${evidence.source} · ${evidence.checkedAt} 확인`}
         </span>
         <button
           type="button"
-          disabled={searching}
+          disabled={searching || empty}
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls="evidence-list"
