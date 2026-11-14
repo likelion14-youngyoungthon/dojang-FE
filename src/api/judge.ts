@@ -12,12 +12,16 @@ export interface JudgeItem {
   /** provider면 '공고 대기' (기관이 모집할 때만 받음) */
   office: { id: string; name: string | null; phone: string | null }
   form_names: string[]
+  /** 신청서 내려받기 — url이 null이면 아직 파일 없음 */
+  form_files: { name: string; url: string | null }[]
   documents: string[]
   processing_days: number | null
   deadline: string | null
   notes: string[]
   /** 나중에 가능: 이 나이부터 받을 수 있음 */
   eligible_from_age: number | null
+  /** 판정 근거 출처 — confidence(official 등) · 공식 출처 링크 · 확인 안 된 필드 · 소득 기준 설명 */
+  basis: { confidence: string; sources: string[]; unverified: string[]; income_note: string | null } | null
   /** 복지 아이콘 종류 (대응표 6번). null이면 숨김 */
   category: string | null
   /** 13 목록 둘째 줄. null이면 숨김 */

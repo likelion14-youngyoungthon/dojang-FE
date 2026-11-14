@@ -1,4 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import { KAKAO_CALLBACK_PATH } from './api/auth'
+import { KakaoCallbackPage } from './pages/KakaoCallbackPage'
 import { AppliedPage } from './pages/AppliedPage'
 import { ComparePage } from './pages/ComparePage'
 import { DemoPersonaPage } from './pages/DemoPersonaPage'
@@ -25,6 +27,7 @@ function App() {
               {/* 1 시작 */}
               <Route path="/" element={<LoginPage />} />
               <Route path="/demo" element={<DemoPersonaPage />} />
+              <Route path={KAKAO_CALLBACK_PATH} element={<KakaoCallbackPage />} />
 
               {/* 2 상황 알려 주기 · 4단계 */}
               <Route path="/situation/place" element={<PlacePage />} />

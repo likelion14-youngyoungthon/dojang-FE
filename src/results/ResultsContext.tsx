@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { KAKAO_CALLBACK_PATH } from '../api/auth'
 import { getToken } from '../api/client'
 import { fromJudgeRequest, postJudge, toJudgeRequest, type JudgeRequest, type JudgeResult } from '../api/judge'
 import { fetchOffices, type ApiOffice } from '../api/offices'
@@ -39,6 +40,8 @@ interface ResultsContextValue extends StoredResults {
   /** 12 '결과 보기' · 체험 인물 고르기 — 판정 받고 저장. 실패하면 ApiError를 던짐 */
   runJudge: (situation: Partial<Situation>, options?: { save?: boolean }) => Promise<void>
   togglePacked: (name: string) => void
+  /** 카카오 로그인 직후 — 서버에 저장된 상황·신청 현황으로 채움. 저장된 게 없으면 false */
+  restore: (options?: { overwrite?: boolean }) => Promise<boolean>
   /** 탈퇴·다른 체험 인물로 바꿀 때 비움 */
   clear: () => void
 }
@@ -81,26 +84,33 @@ export function ResultsProvider({ children }: { children: ReactNode }) {
   const view = state.judge ? toJudgeView(state.judge, state.offices) : null
   setLiveView(view)
 
-  // 다시 방문: 앱 열 때 토큰 있으면 GET /me/progress → POST /judge (대응표)
+  /**
+   * 저장된 기록 불러오기: GET /me/progress → POST /judge (대응표)
+   * - overwrite: 이 브라우저의 상황 값을 서버 profile로 덮어씀 (로그인 직후). 아니면 비어 있을 때만 채움
+   * - 저장된 profile이 없으면 false
+   */
+  const restore = async ({ overwrite = false, alive = (): boolean => true } = {}) => {
+    const { profile, services } = await getProgress()
+    if (!alive() || !profile) return false
+    const progress: Record<string, ProgressEntry> = {}
+    for (const s of services) {
+      const stage = userStatusOf(s)
+      if (stage) progress[s.id] = { stage, submittedAt: s.submitted_at ? `${s.submitted_at}T00:00:00` : null }
+    }
+    // 다른 기기에서 열면 상황 값이 비어 있으니 서버 profile로 채움 (구·누가·소득 글자는 서버에 없음)
+    if (overwrite || !situation.dong) replace(fromJudgeRequest(profile))
+    const { judge, offices } = await judgeWithOffices(profile)
+    if (!alive()) return false
+    setState((prev) => ({ ...prev, progress, judge, offices }))
+    setIsReturnVisit(Object.values(progress).some((p) => p.stage === 'submitted'))
+    return true
+  }
+
+  // 다시 방문: 앱 열 때 토큰 있으면 불러옴 (카카오 로그인 콜백 화면은 거기서 직접 부름)
   useEffect(() => {
-    if (!getToken()) return
+    if (!getToken() || window.location.pathname === KAKAO_CALLBACK_PATH) return
     let alive = true
-    getProgress()
-      .then(async ({ profile, services }) => {
-        if (!alive || !profile) return
-        const progress: Record<string, ProgressEntry> = {}
-        for (const s of services) {
-          const stage = userStatusOf(s)
-          if (stage) progress[s.id] = { stage, submittedAt: s.submitted_at ? `${s.submitted_at}T00:00:00` : null }
-        }
-        // 다른 기기에서 열면 상황 값이 비어 있으니 서버 profile로 채움 (구·누가·소득 글자는 서버에 없음)
-        if (!situation.dong) replace(fromJudgeRequest(profile))
-        const { judge, offices } = await judgeWithOffices(profile)
-        if (!alive) return
-        setState((prev) => ({ ...prev, progress, judge, offices }))
-        setIsReturnVisit(Object.values(progress).some((p) => p.stage === 'submitted'))
-      })
-      .catch((e) => console.warn('다시 방문 불러오기 실패', e))
+    restore({ alive: () => alive }).catch((e) => console.warn('다시 방문 불러오기 실패', e))
     return () => {
       alive = false
     }
@@ -144,7 +154,7 @@ export function ResultsProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ResultsContext.Provider value={{ ...state, view, isReturnVisit, submit, setStage, runJudge, togglePacked, clear }}>
+    <ResultsContext.Provider value={{ ...state, view, isReturnVisit, submit, setStage, runJudge, togglePacked, restore, clear }}>
       {children}
     </ResultsContext.Provider>
   )
