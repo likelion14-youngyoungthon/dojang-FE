@@ -9,22 +9,23 @@ import { StatusChangeModal } from '../../components/results/StatusChangeModal'
 import { BenefitTile } from '../../components/results/Tiles'
 import { StatusChip } from '../../components/StatusChip'
 import { getOffice } from '../../data/results'
+import { useServiceSteps } from '../../api/steps'
 import { currentStep, getApplySteps } from '../../results/progress'
 import { useResults } from '../../results/ResultsContext'
-import { STEP_COUNT } from '../../components/results/StageBar'
 
 /** L3 신청 단계 · 18 상태 변경 확인 (API: GET /services/{id}/steps · PUT /me/progress · GET /offices) */
 export function HistoryPage() {
   const { benefitId } = useParams()
   const { applied, setStage } = useResults()
   const [confirming, setConfirming] = useState(false)
+  const serverSteps = useServiceSteps(benefitId)
   const record = applied.find((a) => a.benefit.id === benefitId)
   if (!record) return <Navigate to="/results" replace />
 
   const { benefit, stage } = record
   const office = getOffice(benefit.officeId)
-  const steps = getApplySteps(benefit, record)
-  const now = currentStep(record)
+  const steps = getApplySteps(benefit, record, serverSteps)
+  const now = currentStep(record, serverSteps)
   const done = stage === 'approved'
 
   return (
@@ -45,7 +46,7 @@ export function HistoryPage() {
       >
         <img src={sealPatternIcon} alt="" width={280} height={280} className="pointer-events-none absolute -right-[130px] -bottom-40" />
         <p className="relative text-14 font-medium">
-          {benefit.name} · {STEP_COUNT}단계 중 {now}단계
+          {benefit.name} · {steps.length}단계 중 {now}단계
         </p>
         <p className="relative text-36 font-bold">{steps[now - 1].title}</p>
       </section>

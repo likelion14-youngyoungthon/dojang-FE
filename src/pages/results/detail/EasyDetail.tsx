@@ -25,7 +25,7 @@ export function EasyDetail({ benefit, toggle }: { benefit: Benefit; toggle: Reac
         </div>
       }
       titleAside={toggle}
-      below={benefit.tagline && <p className="text-17 text-text">{benefit.tagline}</p>}
+      below={(easy?.summary ?? benefit.tagline) && <p className="text-17 text-text">{easy?.summary ?? benefit.tagline}</p>}
       aside={
         <>
           {office && (
@@ -58,11 +58,15 @@ export function EasyDetail({ benefit, toggle }: { benefit: Benefit; toggle: Reac
               </div>
             </Card>
           )}
-          {easy?.glossary && (
+          {easy?.glossary && easy.glossary.length > 0 && (
             <Card className="gap-1.5 p-6">
               <p className="text-13 font-medium text-text-sub">어려운 말</p>
-              <p className="text-22 font-bold text-text-strong">{easy.glossary.word}</p>
-              <p className="text-17 text-text">{easy.glossary.meaning}</p>
+              {easy.glossary.map((term, i) => (
+                <div key={term.word} className={i > 0 ? 'mt-3' : ''}>
+                  <p className="text-22 font-bold text-text-strong">{term.word}</p>
+                  <p className="text-17 text-text">{term.meaning}</p>
+                </div>
+              ))}
             </Card>
           )}
         </>

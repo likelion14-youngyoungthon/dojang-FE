@@ -31,13 +31,24 @@ export function TextOnlineDetail({ benefit }: { benefit: Benefit }) {
   const onlineUrl = benefit.detail?.onlineUrl
   const message = textMessageLines(benefit)
 
-  const facts =
-    benefit.textOnline?.facts ?? benefit.detail?.amount?.map(({ label, value }) => ({ label, value: `월 ${value}`, unit: '만원' })) ?? []
+  const facts: { label: string; value: string; unit?: string }[] =
+    benefit.textOnline?.facts ??
+    // judge benefit — Figma M2의 '받는 것' 칸
+    (benefit.benefitAmount ? [{ label: '받는 것', value: benefit.benefitAmount.amount }] : undefined) ??
+    benefit.detail?.amount?.map(({ label, value }) => ({ label, value: `월 ${value}`, unit: '만원' })) ??
+    []
+  // 신청서 이름: judge form_names
+  const form = benefit.textOnline?.form ?? benefit.formNames
   const mine = { age: describeAge(situation), disability: describeDisability(situation), income: describeIncome(situation) }
   const reasons: { condition: string; criteria: string; mine: string; verdict: Verdict }[] =
     benefit.textOnline?.reasons ??
-    // TODO: 판정 결과는 POST /judge 응답으로
-    benefit.detail?.reasons.map((r) => ({ condition: r.condition, criteria: r.criteria, mine: mine[r.field], verdict: 'ok' as const })) ??
+    // judge conditions — met null이면 확인 필요
+    benefit.detail?.reasons.map((r) => ({
+      condition: r.condition,
+      criteria: r.criteria,
+      mine: r.value ?? (r.field ? mine[r.field] : ''),
+      verdict: r.met === null ? ('check' as const) : ('ok' as const),
+    })) ??
     []
 
   const copy = async () => {
@@ -79,11 +90,11 @@ export function TextOnlineDetail({ benefit }: { benefit: Benefit }) {
               </button>
             )}
           </Card>
-          {benefit.textOnline?.form && (
+          {form && form.length > 0 && (
             <Card className="gap-1.5 p-6">
               <p className="text-13 font-medium text-text-sub">신청서</p>
               <p className="text-17 font-medium text-text-strong">
-                {benefit.textOnline.form.map((line) => (
+                {form.map((line) => (
                   <span key={line} className="block">
                     {line}
                   </span>

@@ -17,6 +17,8 @@ import placeEducationIcon from '../assets/icons/place/education-white.svg'
 import placeOfficeIcon from '../assets/icons/place/office-white.svg'
 import placeRecruitIcon from '../assets/icons/place/recruit-white.svg'
 import placeTransportIcon from '../assets/icons/place/transport-white.svg'
+import type { JudgeResult } from '../api/judge'
+import type { ApiOffice } from '../api/offices'
 
 // ─────────────────────────────────────────────────────────────
 // TODO: POST /judge · GET /offices 결과로 교체. 지금은 Figma "3 결과" 예시 값
@@ -53,12 +55,15 @@ export interface Office {
   phone: string
   /** 줄 바꿈 위치까지 디자인대로 */
   addressLines: string[]
+  /** 지도 핀 좌표 (GET /offices). 없으면 지도에 핀 없이 목록에만 보임 */
+  lat: number | null
+  lng: number | null
 }
 
 export const OFFICES: Office[] = [
-  { id: 'baekam', name: '백암면 행정복지센터', kind: '행정복지센터', icon: 'office', phone: '031-6193-5792', addressLines: ['경기도 용인시 처인구', '백암면 백암로 189'] },
-  { id: 'education', name: '용인교육지원청', kind: '교육지원청', icon: 'education', phone: '031-8020-9113', addressLines: ['경기도 용인시 처인구', '중부대로1161번길 69'] },
-  { id: 'transport', name: '용인시 교통약자이동지원센터', kind: '이동지원센터', icon: 'transport', phone: '1666-0420', addressLines: ['경기도 용인시 처인구 동백죽전대로 61', '(용인미르스타디움)'] },
+  { id: 'dong_center', name: '백암면 행정복지센터', kind: '행정복지센터', icon: 'office', phone: '031-6193-5792', addressLines: ['경기도 용인시 처인구', '백암면 백암로 189'], lat: 37.16396, lng: 127.375365 },
+  { id: 'education_office', name: '용인교육지원청', kind: '교육지원청', icon: 'education', phone: '031-8020-9113', addressLines: ['경기도 용인시 처인구', '중부대로1161번길 69'], lat: 37.2426232, lng: 127.1797311 },
+  { id: 'mobility_center', name: '용인시 교통약자이동지원센터', kind: '이동지원센터', icon: 'transport', phone: '1666-0420', addressLines: ['경기도 용인시 처인구 동백죽전대로 61', '(용인미르스타디움)'], lat: 37.249624, lng: 127.165149 },
 ]
 
 export interface Document {
@@ -69,14 +74,19 @@ export interface Document {
 export interface Reason {
   condition: string
   criteria: string
-  /** 내 상황 칸 — 상황 값에서 채움 */
-  field: 'age' | 'disability' | 'income'
+  /** 내 상황 칸 — 상황 값에서 채움 (Figma 예시) */
+  field?: 'age' | 'disability' | 'income'
+  /** 내 상황 칸 — judge conditions[].value (있으면 이 값) */
+  value?: string | null
+  /** 판정 — judge conditions[].met: true 맞아요 · false 맞지 않아요 · null 확인 필요 (예시 값은 없음 = 맞아요) */
+  met?: boolean | null
 }
 
 export interface Evidence {
   quote: string[]
   tag: string
-  kind: '지원대상' | '지원내용'
+  /** 원문 위치 — 지원대상 · 선정기준 · 지원내용 (basis quotes[].section) */
+  kind: string
 }
 
 /** 쉬운 말 그림 문장에 쓰는 그림 (Figma: 그림 칸) */
@@ -106,7 +116,8 @@ export type Verdict = 'ok' | 'check'
 export interface Benefit {
   id: string
   name: string
-  icon: BenefitIconKind
+  /** 복지 아이콘 — judge category. 없으면 숨김 */
+  icon?: BenefitIconKind
   summary: string
   /** 주황색으로 덧붙는 확인할 것 */
   checkNote?: string
@@ -115,12 +126,17 @@ export interface Benefit {
   officeId: string | null
   detail?: {
     amount?: { label: string; value: string }[]
-    rows: { label: string; value: string }[]
+    /** 없으면 기본 요약(무엇을 · 접수처) */
+    rows?: { label: string; value: string }[]
     reasons: Reason[]
     evidence: { source: string; checkedAt: string; items: Evidence[] } | null
     onlineUrl?: string
   }
   documents?: Document[]
+  /** 받는 것 — judge benefit: 큰 글자 amount / 작은 글자 note (대응표 8번) */
+  benefitAmount?: { amount: string; note: string | null } | null
+  /** 창구에서 쓰는 신청서 이름 (judge form_names). 없으면 '서비스명 신청서' */
+  formNames?: string[]
   /** 제목 아래 한 줄 설명 (큰 글씨·쉬운 말) */
   tagline?: string
   /** 큰 글씨 화면 (Figma M1) — TODO: GET /services/{id}/steps */
@@ -130,17 +146,20 @@ export interface Benefit {
     result?: LargeBlock
     steps?: string[]
   }
-  /** 문자·온라인 화면 (Figma M2) — TODO: 서버 필드 online(온라인 신청 가능) 추가 필요 */
+  /** 문자·온라인 화면 (Figma M2) 예시 값 — 판정 결과는 judge online·benefit·form_names로 채움 */
   textOnline?: {
     facts: { label: string; value: string; unit?: string }[]
     /** 창구에서 쓰는 신청서 이름 (줄 바꿈 위치까지) */
     form: string[]
     reasons: { condition: string; criteria: string; mine: string; verdict: Verdict }[]
   }
-  /** 쉬운 말 화면 (Figma M3) — TODO: 서버 필드 easy_sentences(쉬운 말 문장) 추가 필요 */
+  /** 쉬운 말 화면 (Figma M3) — 판정 결과는 judge easy로 채움 */
   easy?: {
-    groups: { title: string; items: { icon: EasyIconKind; text: string }[] }[]
-    glossary?: { word: string; meaning: string }
+    /** 제목 아래 쉬운 말 한 줄 (judge easy.summary) */
+    summary?: string
+    groups: { title: string; items: { icon?: EasyIconKind; text: string }[] }[]
+    /** '어려운 말' 카드 (judge easy.terms) */
+    glossary?: { word: string; meaning: string }[]
   }
 }
 
@@ -151,7 +170,7 @@ export const BENEFITS: Benefit[] = [
     icon: 'therapy',
     summary: '월 18만원 · 본인부담 8만원',
     status: 'before',
-    officeId: 'baekam',
+    officeId: 'dong_center',
     detail: {
       amount: [
         { label: '지원 금액', value: '18' },
@@ -188,10 +207,10 @@ export const BENEFITS: Benefit[] = [
       { name: '장애 진단서', note: '발달재활서비스 바우처 · 9세 미만은 의뢰서와 검사자료로 대신할 수 있어요' },
     ],
   },
-  { id: 'family-care', name: '장애아가족양육지원', icon: 'care', summary: '아이돌봄 지원', status: 'before', officeId: 'baekam' },
-  { id: 'parent-counsel', name: '발달장애인 부모상담지원', icon: 'counsel', summary: '부모 상담 12개월', status: 'before', officeId: 'baekam' },
-  { id: 'support-plan', name: '발달장애인 개인별지원계획', icon: 'counsel', summary: '필요한 지원 계획 세우기', status: 'before', officeId: 'baekam' },
-  { id: 'childcare-fee', name: '장애아 보육료 지원', icon: 'childcare', summary: '장애아반 월 634,000원', status: 'before', officeId: 'baekam' },
+  { id: 'family-care', name: '장애아가족양육지원', icon: 'care', summary: '아이돌봄 지원', status: 'before', officeId: 'dong_center' },
+  { id: 'parent-counsel', name: '발달장애인 부모상담지원', icon: 'counsel', summary: '부모 상담 12개월', status: 'before', officeId: 'dong_center' },
+  { id: 'support-plan', name: '발달장애인 개인별지원계획', icon: 'counsel', summary: '필요한 지원 계획 세우기', status: 'before', officeId: 'dong_center' },
+  { id: 'childcare-fee', name: '장애아 보육료 지원', icon: 'childcare', summary: '장애아반 월 634,000원', status: 'before', officeId: 'dong_center' },
   {
     id: 'special-education',
     name: '특수교육대상자 선정·배치',
@@ -199,7 +218,7 @@ export const BENEFITS: Benefit[] = [
     summary: '만 3~17세 의무교육',
     checkNote: '진단평가',
     status: 'check',
-    officeId: 'education',
+    officeId: 'education_office',
   },
   {
     id: 'special-transport',
@@ -208,7 +227,7 @@ export const BENEFITS: Benefit[] = [
     summary: '장애인 콜택시 1,700원부터',
     checkNote: '보행 어려움 서류',
     status: 'check',
-    officeId: 'transport',
+    officeId: 'mobility_center',
   },
   { id: 'family-rest', name: '발달장애인 가족휴식지원', icon: 'care', summary: '모집 시기 확인', status: 'recruit', officeId: null },
 
@@ -219,7 +238,7 @@ export const BENEFITS: Benefit[] = [
     icon: 'care',
     summary: '수리비의 절반 · 1년에 10만원까지',
     status: 'before',
-    officeId: 'baekam',
+    officeId: 'dong_center',
     tagline: '휠체어와 전동스쿠터 수리비를 도와줘요.',
     large: {
       gets: { label: '받는 돈', title: '수리비의 절반', sub: '1년에 10만원까지' },
@@ -233,7 +252,7 @@ export const BENEFITS: Benefit[] = [
     icon: 'care',
     summary: '월 이용권 · 6~64세',
     status: 'before',
-    officeId: 'baekam',
+    officeId: 'dong_center',
     tagline: '도와주는 사람이 집에 와서 집안일과 외출을 도와줘요.',
     detail: {
       rows: [
@@ -285,7 +304,7 @@ export const BENEFITS: Benefit[] = [
           ],
         },
       ],
-      glossary: { word: '이용권', meaning: '정해진 곳에서 돈 대신 쓰는 표예요.' },
+      glossary: [{ word: '이용권', meaning: '정해진 곳에서 돈 대신 쓰는 표예요.' }],
     },
   },
   {
@@ -294,7 +313,7 @@ export const BENEFITS: Benefit[] = [
     icon: 'care',
     summary: '낮 활동 · 한 달 132시간 또는 176시간',
     status: 'before',
-    officeId: 'baekam',
+    officeId: 'dong_center',
     tagline: '낮에 사람들과 함께 활동하는 서비스예요.',
     easy: {
       groups: [
@@ -314,7 +333,7 @@ export const BENEFITS: Benefit[] = [
         },
         { title: '알아 두세요', items: [{ icon: 'hourglass', text: '자리가 없으면 기다려야 해요.' }] },
       ],
-      glossary: { word: '이용권', meaning: '정해진 곳에서 돈 대신 쓰는 표예요.' },
+      glossary: [{ word: '이용권', meaning: '정해진 곳에서 돈 대신 쓰는 표예요.' }],
     },
   },
 ]
@@ -342,5 +361,117 @@ export const STATUS_TABS = [
 ] as const
 export type StatusTab = (typeof STATUS_TABS)[number]['value']
 
-export const getOffice = (id: string | null) => OFFICES.find((o) => o.id === id) ?? null
-export const getBenefit = (id: string | undefined) => BENEFITS.find((b) => b.id === id) ?? null
+// ─────────────────────────────────────────────────────────────
+// POST /judge 결과 → 화면 데이터
+// 서버가 정하는 것: 보이는 항목·상태·접수처. 아이콘·한 줄 설명·상세 내용은
+// 서버 필드(category·short_desc 등)가 [추가 예정]이라 같은 서비스의 Figma 예시 값을 빌려 씀
+// ─────────────────────────────────────────────────────────────
+
+/** 서버 쉬운 말 그림 이름(user_check) → 화면 그림 이름(userCheck). 없는 그림은 숨김 */
+function easyIcon(name: string): EasyIconKind | undefined {
+  const key = name.replace(/_(\w)/g, (_, c: string) => c.toUpperCase())
+  return key in EASY_ICONS ? (key as EasyIconKind) : undefined
+}
+
+/** 온라인 신청 안내 주소 — Figma 예시와 같은 복지로 첫 화면 */
+const BOKJIRO_URL = 'https://www.bokjiro.go.kr'
+
+/** 대응표 6번: office.id → 장소 아이콘 */
+const OFFICE_ICON: Record<string, PlaceIconKind> = { education_office: 'education', mobility_center: 'transport' }
+
+export interface LaterBenefit {
+  name: string
+  /** 이 나이부터 */
+  age: number
+}
+
+export interface JudgeView {
+  /** 남은 신청 (신청 전 · 확인 필요 · 추가 서류 · 공고 대기) */
+  benefits: Benefit[]
+  /** 남은 신청이 있는 접수처 — GET /offices 순서 */
+  offices: Office[]
+  /** 나중에 가능 — 나이 순 */
+  later: LaterBenefit[]
+}
+
+/** 서버 주소(경기도 용인시 처인구 백암면 백암로 189)를 두 줄로 */
+function splitAddress(address: string | null | undefined) {
+  if (!address) return []
+  const m = address.match(/^(\S+ \S+ \S+구) (.+)$/)
+  return m ? [m[1], m[2]] : [address]
+}
+
+/** apiOffices: GET /offices?dong= (주소). judge office에는 이름·전화만 있음 */
+export function toJudgeView(result: JudgeResult, apiOffices: ApiOffice[]): JudgeView {
+  const items = Object.values(result)
+  const later = items
+    .filter((i) => i.verdict === 'not_eligible' && i.eligible_from_age != null && !i.hidden)
+    .map((i) => ({ name: i.name, age: i.eligible_from_age! }))
+    .sort((a, b) => a.age - b.age)
+
+  const benefits: Benefit[] = items
+    .filter((i) => !i.hidden && i.verdict !== 'not_eligible' && (i.status === 'apply' || i.status === 'check' || i.status === 'extra_form'))
+    .map((i): Benefit => {
+      const recruit = i.office.id === 'provider'
+      return {
+        id: i.id,
+        name: i.name,
+        // 대응표 8번: judge 필드를 그대로 씀. null이면 숨김
+        icon: i.category && i.category in BENEFIT_ICONS ? (i.category as BenefitIconKind) : undefined,
+        summary: i.short_desc ?? '',
+        checkNote: i.check_reason ?? undefined,
+        tagline: i.description ?? undefined,
+        benefitAmount: i.benefit,
+        status: recruit ? 'recruit' : i.status === 'apply' ? 'before' : 'check',
+        officeId: recruit ? null : i.office.id,
+        detail: {
+          reasons: (i.conditions ?? []).map((c) => ({ condition: c.label, criteria: c.rule, value: c.value, met: c.met })),
+          evidence: null,
+          // 문자·온라인: online이 true일 때만 복지로 신청 안내 (basis.sources는 지원정보 페이지라 신청 주소로 쓰지 않음)
+          onlineUrl: i.online ? BOKJIRO_URL : undefined,
+        },
+        // 26 가져갈 것: judge 결과 재사용 (대응표 1번)
+        documents: i.documents.map((name) => ({ name, note: i.name })),
+        formNames: i.form_names,
+        // 쉬운 말 모드: judge easy (없으면 기본 상세)
+        easy: i.easy
+          ? {
+              summary: i.easy.summary,
+              groups: i.easy.groups.map((g) => ({ title: g.title, items: g.items.map((it) => ({ icon: easyIcon(it.icon), text: it.text })) })),
+              glossary: i.easy.terms,
+            }
+          : undefined,
+      }
+    })
+
+  const used = new Set(benefits.map((b) => b.officeId).filter(Boolean))
+  const judgeOffice = new Map(items.map((i) => [i.office.id, i.office]))
+  const order = [...apiOffices.map((o) => o.id), ...judgeOffice.keys()]
+  const offices = [...new Set(order)]
+    .filter((id) => used.has(id))
+    .map((id): Office => {
+      const api = apiOffices.find((o) => o.id === id)
+      const name = api?.name ?? judgeOffice.get(id)?.name ?? id
+      return {
+        id,
+        name,
+        kind: id === 'dong_center' ? '행정복지센터' : name,
+        icon: OFFICE_ICON[id] ?? 'office',
+        phone: api?.phone ?? judgeOffice.get(id)?.phone ?? '',
+        addressLines: splitAddress(api?.address),
+        lat: api?.lat ?? null,
+        lng: api?.lng ?? null,
+      }
+    })
+
+  return { benefits, offices, later }
+}
+
+// ponytail: 지금 결과를 모듈 변수로 둬서 getBenefit·getOffice를 부르는 화면을 그대로 씀 (ResultsProvider가 채움)
+let live: JudgeView | null = null
+export const setLiveView = (view: JudgeView | null) => {
+  live = view
+}
+
+export const getOffice = (id: string | null) => (live?.offices ?? OFFICES).find((o) => o.id === id) ?? null
+export const getBenefit = (id: string | undefined) => (live?.benefits ?? BENEFITS).find((b) => b.id === id) ?? null

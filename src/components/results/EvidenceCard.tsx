@@ -10,7 +10,16 @@ type EvidenceData = NonNullable<Benefit['detail']>['evidence']
  * 근거 원문 (Figma: L2 상세 · 근거 원문 펼침 / 근거 찾는 중)
  * 근거를 아직 못 찾았으면(null) "찾는 중"으로 접힌 채 보임
  */
-export function EvidenceCard({ evidence, tagValue }: { evidence: EvidenceData; tagValue: (tag: string) => string }) {
+export function EvidenceCard({
+  evidence,
+  tagValue,
+  failed = false,
+}: {
+  evidence: EvidenceData
+  tagValue: (tag: string) => string
+  /** GET /basis 실패 (E502 등) */
+  failed?: boolean
+}) {
   const [open, setOpen] = useState(false)
   const searching = evidence === null
 
@@ -21,7 +30,8 @@ export function EvidenceCard({ evidence, tagValue }: { evidence: EvidenceData; t
         <span className="flex-1" />
         <span className="flex h-[26px] items-center gap-1 rounded-lg bg-neutral-100 px-2 text-13 font-medium text-text">
           <img src={externalLinkIcon} alt="" width={14} height={14} />
-          {searching ? '복지로 · 찾는 중' : `${evidence.source} · ${evidence.checkedAt} 확인`}
+          {/* TODO: 근거를 못 불러왔을 때 디자인이 없어 칩 글자만 바꿈 */}
+          {failed ? '근거를 불러오지 못했어요' : searching ? '복지로 · 찾는 중' : `${evidence.source} · ${evidence.checkedAt} 확인`}
         </span>
         <button
           type="button"

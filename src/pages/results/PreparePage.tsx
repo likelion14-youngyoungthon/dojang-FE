@@ -23,7 +23,17 @@ export function PreparePage() {
   if (!office) return <Navigate to="/results" replace />
 
   const benefits = remaining.filter((b) => b.officeId === office.id)
-  const documents = benefits.flatMap((b) => b.documents ?? [])
+  // 같은 서류는 한 줄로 합치고 어느 신청에 쓰는지 이어 붙임
+  const documents = Object.values(
+    benefits
+      .flatMap((b) => b.documents ?? [])
+      .reduce<Record<string, { name: string; note: string }>>((acc, d) => {
+        acc[d.name] = acc[d.name] ? { name: d.name, note: `${acc[d.name].note} · ${d.note}` } : d
+        return acc
+      }, {}),
+  )
+  // 창구에서 쓰는 신청서: judge form_names (중복 제거). 판정 전 예시 값은 '서비스명 신청서'
+  const forms = [...new Set(benefits.flatMap((b) => b.formNames ?? [`${b.name} 신청서`]))]
 
   // TODO: 서버에서 PDF로 받기 — 지금은 글자 파일로 내려받음
   const handleDownload = () => {
@@ -137,16 +147,16 @@ export function PreparePage() {
           className="flex w-full items-center gap-2 px-6 py-[18px] text-left"
         >
           <span className="text-22 font-bold text-text-strong">창구에서 쓰는 신청서</span>
-          <span className="text-17 font-bold text-primary">{benefits.length}장</span>
+          <span className="text-17 font-bold text-primary">{forms.length}장</span>
           <span className="flex-1" />
           <img src={chevronDownIcon} alt="" width={20} height={20} className={formsOpen ? 'rotate-180' : ''} />
         </button>
         {formsOpen && (
           // TODO: Figma에 펼친 모습이 없어 신청서 이름만 나열
           <ul id="forms-list" className="flex flex-col gap-2 border-t border-divider px-6 py-4">
-            {benefits.map((b) => (
-              <li key={b.id} className="text-17 text-text">
-                {b.name} 신청서
+            {forms.map((name) => (
+              <li key={name} className="text-17 text-text">
+                {name}
               </li>
             ))}
           </ul>

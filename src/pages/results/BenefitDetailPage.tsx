@@ -1,4 +1,6 @@
 import { useState, type ReactNode } from 'react'
+import { useBasis } from '../../api/basis'
+import { toJudgeRequest } from '../../api/judge'
 import { Navigate, useNavigate, useParams } from 'react-router'
 import checkSuccessIcon from '../../assets/icons/check-success.svg'
 import { Card, CardHeader, KeyValueList } from '../../components/results/Card'
@@ -8,6 +10,7 @@ import { PageTitle, ResultsLayout } from '../../components/results/ResultsLayout
 import { BenefitTile } from '../../components/results/Tiles'
 import { StatusChip } from '../../components/StatusChip'
 import { getBenefit, getOffice, type Benefit, type Reason } from '../../data/results'
+import { useResults } from '../../results/ResultsContext'
 import { useSession } from '../../session/SessionContext'
 import { describeAge, describeDisability, describeIncome } from '../../situation/describe'
 import { useSituation } from '../../situation/SituationContext'
@@ -15,6 +18,15 @@ import { EasyDetail } from './detail/EasyDetail'
 import { LargeDetail } from './detail/LargeDetail'
 import { TextOnlineDetail } from './detail/TextOnlineDetail'
 import { EasyToggle } from './detail/EasyToggle'
+
+/** basis quotes[].matches → 화면 조건 이름 (judge conditions[].label과 같음) */
+const MATCH_LABEL: Record<string, string> = {
+  age: '나이',
+  disability_type: '장애 유형',
+  severity: '장애 정도',
+  income_band: '소득',
+  status: '수급',
+}
 
 /** 복지 상세 — 맞춤 화면에 따라 L2(기본) · M1 큰 글씨 · M2 문자·온라인 · M3 쉬운 말 */
 export function BenefitDetailPage() {
@@ -40,12 +52,27 @@ function DefaultDetail({ benefit, titleAside }: { benefit: Benefit; titleAside?:
   const { situation } = useSituation()
   const office = getOffice(benefit.officeId)
   const detail = benefit.detail
-  const mine: Record<Reason['field'], string> = {
+  const mine: Record<NonNullable<Reason['field']>, string> = {
     age: describeAge(situation),
     disability: describeDisability(situation),
     income: describeIncome(situation),
   }
-  const tagValue = (tag: string) => (tag === '나이' ? mine.age : tag === '장애 유형' ? mine.disability : mine.income)
+  // L2 왜 받을 수 있나요: GET /services/{id}/basis — 판정 결과 화면일 때만 (Figma 예시 화면은 예시 근거)
+  const { judge } = useResults()
+  const basis = useBasis(judge ? benefit.id : null, toJudgeRequest(situation))
+  const evidence = basis.data
+    ? {
+        source: basis.data.quotes.some((q) => q.source.includes('bokjiro.go.kr')) ? '복지로' : (basis.data.quotes[0]?.source ?? ''),
+        checkedAt: basis.data.quotes[0]?.checked_at ?? '',
+        items: basis.data.quotes.map((q) => ({ quote: [q.text], tag: MATCH_LABEL[q.matches] ?? q.matches, kind: q.section })),
+      }
+    : judge
+      ? null
+      : (detail?.evidence ?? null)
+  // 태그 옆 내 상황: judge conditions의 value (없으면 고른 상황)
+  const tagValue = (tag: string) =>
+    detail?.reasons.find((r) => r.condition === tag)?.value ??
+    (tag === '나이' ? mine.age : tag === '장애 유형' ? mine.disability : mine.income)
 
   return (
     <ResultsLayout
@@ -58,6 +85,8 @@ function DefaultDetail({ benefit, titleAside }: { benefit: Benefit; titleAside?:
         </div>
       }
       titleAside={titleAside}
+      // 대응표 8번: description = L2 제목 아래 설명 (null이면 숨김)
+      below={benefit.tagline && <p className="text-17 text-text">{benefit.tagline}</p>}
       aside={
         office && (
           <>
@@ -75,7 +104,15 @@ function DefaultDetail({ benefit, titleAside }: { benefit: Benefit; titleAside?:
         )
       }
     >
-      {detail?.amount && (
+      {/* 받는 것 — judge benefit: 큰 글자 amount / 작은 글자 note (대응표 8번) */}
+      {benefit.benefitAmount && (
+        <section aria-label="받는 것" className="flex flex-col gap-0.5 rounded-[20px] bg-primary px-7 pt-5 pb-6 text-on-primary">
+          <p className="text-28 font-bold">{benefit.benefitAmount.amount}</p>
+          {benefit.benefitAmount.note && <p className="text-15 font-medium">{benefit.benefitAmount.note}</p>}
+        </section>
+      )}
+
+      {!benefit.benefitAmount && detail?.amount && (
         <section aria-label="지원 금액" className="flex flex-wrap items-center gap-7 rounded-[20px] bg-primary px-7 pt-5 pb-6 text-on-primary">
           {detail.amount.map(({ label, value }, i) => (
             <div key={label} className="flex items-center gap-7">
@@ -132,13 +169,19 @@ function DefaultDetail({ benefit, titleAside }: { benefit: Benefit; titleAside?:
                     <p className="text-17 font-bold text-text-strong">{r.condition}</p>
                     <p className="text-17 text-text">{r.criteria}</p>
                   </td>
-                  <td className="py-[13px] pl-4 text-17 font-medium text-text-strong">{mine[r.field]}</td>
+                  <td className="py-[13px] pl-4 text-17 font-medium text-text-strong">{r.value ?? (r.field ? mine[r.field] : '')}</td>
                   <td className="py-[13px] pr-6 pl-4">
-                    {/* TODO: 판정 결과(맞아요/확인 필요 등)는 POST /judge 응답으로 */}
-                    <span className="inline-flex h-[26px] items-center gap-1 rounded-lg bg-success-100 pr-2 pl-1.5 text-13 font-bold text-success">
-                      <img src={checkSuccessIcon} alt="" width={14} height={14} />
-                      맞아요
-                    </span>
+                    {/* 판정: judge conditions[].met — true 맞아요 · null 확인 필요 · false 맞지 않아요 (Figma 예시 값은 met 없음 = 맞아요) */}
+                    {r.met === null ? (
+                      <span className="inline-flex h-[26px] items-center rounded-lg bg-warn-100 px-2 text-13 font-bold text-warn">확인 필요</span>
+                    ) : r.met === false ? (
+                      <span className="inline-flex h-[26px] items-center rounded-lg bg-neutral-100 px-2 text-13 font-bold text-text">맞지 않아요</span>
+                    ) : (
+                      <span className="inline-flex h-[26px] items-center gap-1 rounded-lg bg-success-100 pr-2 pl-1.5 text-13 font-bold text-success">
+                        <img src={checkSuccessIcon} alt="" width={14} height={14} />
+                        맞아요
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -148,7 +191,7 @@ function DefaultDetail({ benefit, titleAside }: { benefit: Benefit; titleAside?:
         </Card>
       )}
 
-      <EvidenceCard evidence={detail?.evidence ?? null} tagValue={tagValue} />
+      <EvidenceCard evidence={evidence} tagValue={tagValue} failed={Boolean(basis.error)} />
     </ResultsLayout>
   )
 }

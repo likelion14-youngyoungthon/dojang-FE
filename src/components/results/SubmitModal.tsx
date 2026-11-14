@@ -5,7 +5,7 @@ import type { WelfareIconKind } from '../../data/welfare'
 import { Modal } from '../Modal'
 
 // 결과 화면 복지 아이콘 → 체크 선택지용 20px 아이콘
-const ICON_20: Record<Benefit['icon'], WelfareIconKind> = {
+const ICON_20: Record<NonNullable<Benefit['icon']>, WelfareIconKind> = {
   therapy: 'therapy',
   care: 'care',
   counsel: 'counsel',
@@ -40,7 +40,7 @@ export function SubmitModal({ office, benefits, onCancel, onSubmit }: SubmitModa
 
       <div className="flex flex-col gap-2">
         {benefits.map((b) => (
-          <CheckCard key={b.id} checked={picked.includes(b.id)} label={b.name} icon={ICON_20[b.icon]} onToggle={() => toggle(b.id)} />
+          <CheckCard key={b.id} checked={picked.includes(b.id)} label={b.name} icon={b.icon && ICON_20[b.icon]} onToggle={() => toggle(b.id)} />
         ))}
       </div>
 

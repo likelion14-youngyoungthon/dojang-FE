@@ -40,31 +40,5 @@ export interface WelfareItem {
   icon: WelfareIconKind
 }
 
-// TODO: 서버의 제도 목록으로 교체
-/** 장애 등록할 때 같이 신청하는 것 */
-export const REGISTRATION_BUNDLE: WelfareItem[] = [
-  { id: 'reduction', name: '감면 서비스 7종', official: '감면서비스 대행 7종', icon: 'reduction' },
-  { id: 'parking', name: '장애인 자동차 표지', official: '장애인사용자동차등표지', icon: 'parking' },
-  { id: 'activity', name: '장애인 활동지원', official: '장애인활동지원', icon: 'care' },
-  { id: 'assistive', name: '장애인 보조기구', official: '장애인보조기구 교부', icon: 'assistive' },
-  { id: 'support-plan', name: '발달장애인 개인별지원계획', official: '발달장애인 개인별지원계획', icon: 'counsel' },
-  { id: 'diagnosis', name: '진단서 발급비·검사비', official: '저소득 장애인 진단서 발급비 및 검사비', icon: 'medical' },
-  { id: 'highway', name: '고속도로 통행료 할인', official: '고속도로 통행료 할인', icon: 'transport' },
-  { id: 'employment', name: '고용 서비스 연결', official: '타기관 서비스 의뢰(고용)', icon: 'employment' },
-]
-
-/** 그것 말고 따로 신청하는 것 */
-export const SEPARATE_APPLICATIONS: WelfareItem[] = [
-  { id: 'child-allowance', name: '장애아동수당', icon: 'allowance' },
-  { id: 'rehab-voucher', name: '발달재활서비스 바우처', icon: 'therapy' },
-  { id: 'family-care', name: '장애아가족양육지원', icon: 'care' },
-  { id: 'parent-counsel', name: '발달장애인 부모상담지원', icon: 'counsel' },
-  { id: 'family-rest', name: '발달장애인 가족휴식지원', icon: 'care' },
-  { id: 'childcare-fee', name: '장애아 보육료 지원', icon: 'childcare' },
-  { id: 'special-education', name: '특수교육대상자 선정·배치', icon: 'education' },
-  { id: 'special-transport', name: '특별교통수단 이용등록', icon: 'transport' },
-  { id: 'sports-voucher', name: '장애인스포츠강좌이용권', icon: 'sports' },
-]
-
 export const APPLICATION_STATUSES = ['심사 대기 중', '결과 나옴', '이용 중'] as const
 export type ApplicationProgress = (typeof APPLICATION_STATUSES)[number]

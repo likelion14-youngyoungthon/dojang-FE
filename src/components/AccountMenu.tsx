@@ -125,7 +125,8 @@ export function AccountMenu() {
           onCancel={() => setConfirming(false)}
           onConfirm={() => {
             setConfirming(false)
-            withdraw()
+            // TODO: 탈퇴 실패 안내 디자인이 없어 기본 알림으로 보여 줌
+            withdraw().catch((e: Error) => window.alert(`탈퇴하지 못했어요. ${e.message}`))
           }}
         />
       )}

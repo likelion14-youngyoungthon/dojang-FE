@@ -1,5 +1,5 @@
-import { getIncomeBrackets } from '../data/profileOptions'
-import { REGISTRATION_BUNDLE, SEPARATE_APPLICATIONS } from '../data/welfare'
+import type { RegItem } from '../api/regItems'
+import type { ServiceItem } from '../api/services'
 import type { Situation } from './SituationContext'
 
 export interface SummaryRow {
@@ -12,7 +12,8 @@ const SEVERITY_TEXT = { '심한 장애': '정도 심함', '심하지 않은 장�
 const LIVELIHOOD_TEXT = { 기초생활수급: '기초생활수급', 차상위: '차상위', '해당 없어요': '수급 아님', '잘 모르겠어요': null } as const
 
 /** 오른쪽 "내 상황" 카드에 보이는 6줄 — 단계 순서(사는 곳·누가 → 나이·장애 → 이미 신청 → 가구·소득)와 같게 */
-export function summarize(s: Situation): SummaryRow[] {
+/** regItems: GET /reg-items 목록 (등록 때 신청한 것 이름) · services: GET /services 목록 (따로 신청한 것 이름) */
+export function summarize(s: Situation, regItems: RegItem[], services: ServiceItem[]): SummaryRow[] {
   const disability = s.disabilityType
     ? [
         s.disabilityType === '잘 모르겠어요' ? '장애 유형 모름' : s.disabilityType.replace(/장애$/, ' 장애'),
@@ -25,15 +26,13 @@ export function summarize(s: Situation): SummaryRow[] {
   const household = s.basicLivelihood
     ? [
         [`${s.householdSize}명`, LIVELIHOOD_TEXT[s.basicLivelihood]].filter(Boolean).join(' · '),
-        ...(s.income && s.income !== 'unknown'
-          ? [getIncomeBrackets(s.householdSize).find((b) => b.value === s.income)!.label]
-          : []),
+        ...(s.income && s.income !== 'unknown' && s.incomeLabel ? [s.incomeLabel] : []),
       ]
     : null
 
   const applied = [
-    ...REGISTRATION_BUNDLE.filter((w) => s.bundle.includes(w.id)).map((w) => w.name),
-    ...(s.hasSeparate ? SEPARATE_APPLICATIONS.filter((w) => w.id in s.separate).map((w) => w.name) : []),
+    ...regItems.filter((w) => s.bundle.includes(w.id)).map((w) => w.easy_label),
+    ...(s.hasSeparate ? services.filter((w) => w.id in s.separate).map((w) => w.name) : []),
   ]
   const appliedDone = applied.length > 0 || s.hasSeparate === false || s.bundle.includes('unknown')
 

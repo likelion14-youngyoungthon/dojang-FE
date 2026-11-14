@@ -10,6 +10,7 @@ const STATUS = {
   recruit: { label: '모집 기간', dot: statusDotSubIcon, className: 'bg-neutral-100 text-text' },
   submitted: { label: '심사 대기 중', dot: statusDotPrimaryIcon, className: 'bg-primary-100 text-primary' },
   approved: { label: '결과 나옴', dot: statusDotSuccessIcon, className: 'bg-success-100 text-success' },
+  in_use: { label: '이용 중', dot: statusDotSuccessIcon, className: 'bg-success-100 text-success' },
 } as const
 
 export type ApplicationStatus = keyof typeof STATUS

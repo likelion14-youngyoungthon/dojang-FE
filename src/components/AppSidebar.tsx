@@ -9,8 +9,10 @@ import menuLater24Icon from '../assets/icons/menu-later-24.svg'
 import menuRemainingOffIcon from '../assets/icons/menu-remaining-off.svg'
 import menuRemainingIcon from '../assets/icons/menu-remaining.svg'
 import menuRemaining24Icon from '../assets/icons/menu-remaining-24.svg'
-import { BENEFIT_ICONS, LATER_BENEFITS } from '../data/results'
-import { REGISTRATION_BUNDLE, SEPARATE_APPLICATIONS, WELFARE_ICONS } from '../data/welfare'
+import { BENEFIT_ICONS } from '../data/results'
+import { regItemIcon, useRegItems } from '../api/regItems'
+import { categoryIcon, useServiceList } from '../api/services'
+import { WELFARE_ICONS } from '../data/welfare'
 import { useResults } from '../results/ResultsContext'
 import { formatMonthDay } from '../results/progress'
 import { useSession } from '../session/SessionContext'
@@ -109,7 +111,9 @@ function ResultsNav() {
   const { pathname } = useLocation()
   const { mode } = useSession()
   const { situation } = useSituation()
-  const { remaining, applied } = useResults()
+  const { items: regItems } = useRegItems()
+  const { items: services } = useServiceList(situation.age)
+  const { remaining, applied, later } = useResults()
   const [expanded, setExpanded] = useState(false)
   const large = mode === '큰 글씨'
   const showCount = mode === '기본'
@@ -119,21 +123,21 @@ function ResultsNav() {
     ...applied.map(({ benefit, submittedAt }) => ({
       key: benefit.id,
       name: benefit.name,
-      icon: BENEFIT_ICONS[benefit.icon],
-      sub: `${formatMonthDay(submittedAt)} 신청`,
+      icon: benefit.icon ? BENEFIT_ICONS[benefit.icon] : null,
+      sub: `${formatMonthDay(submittedAt)} 신청`.trim(),
       to: `/history/${benefit.id}`,
     })),
-    ...REGISTRATION_BUNDLE.filter((w) => situation.bundle.includes(w.id)).map((w) => ({
+    ...regItems.filter((w) => situation.bundle.includes(w.id)).map((w) => ({
       key: w.id,
-      name: w.name,
-      icon: WELFARE_ICONS[w.icon],
+      name: w.easy_label,
+      icon: WELFARE_ICONS[regItemIcon(w.category)],
       sub: '등록 때 신청',
       to: null,
     })),
-    ...SEPARATE_APPLICATIONS.filter((w) => situation.separate[w.id]).map((w) => ({
+    ...services.filter((w) => situation.separate[w.id]).map((w) => ({
       key: w.id,
       name: w.name,
-      icon: WELFARE_ICONS[w.icon],
+      icon: categoryIcon(w.category) ? WELFARE_ICONS[categoryIcon(w.category)!] : null,
       sub: situation.separate[w.id],
       to: null,
     })),
@@ -174,7 +178,7 @@ function ResultsNav() {
               const body = (
                 <>
                   <span className="flex items-center gap-1.5">
-                    <InsetIcon src={item.icon.src} inset={item.icon.inset} bleed={item.icon.bleed} className="size-4" />
+                    {item.icon && <InsetIcon src={item.icon.src} inset={item.icon.inset} bleed={item.icon.bleed} className="size-4" />}
                     <span className={`min-w-0 flex-1 truncate text-15 ${current ? 'font-bold text-primary' : 'font-medium text-text-strong'}`}>
                       {item.name}
                     </span>
@@ -218,7 +222,7 @@ function ResultsNav() {
         label="나중에 가능"
         icon={{ on: menuLaterIcon, off: large ? menuLater24Icon : menuLaterIcon, large: menuLater24Icon }}
         active={false}
-        count={LATER_BENEFITS.length}
+        count={later.length}
         large={large}
         showCount={showCount}
       />

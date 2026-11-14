@@ -9,14 +9,14 @@ import { OfficeGroupCard } from '../../components/results/OfficeGroupCard'
 import { PageTitle, ResultsLayout } from '../../components/results/ResultsLayout'
 import { SituationSummaryLink } from '../../components/results/SituationSummaryLink'
 import { TodoCard } from '../../components/results/TodoCard'
-import { OFFICES, STATUS_TABS, type StatusTab } from '../../data/results'
+import { STATUS_TABS, type StatusTab } from '../../data/results'
 import { formatMonthDay } from '../../results/progress'
 import { useResults } from '../../results/ResultsContext'
 
 /** 13 남은 신청 · 0건일 때 · 신청 후 · A2 다시 방문 (API: POST /judge · GET /offices · GET /meta · GET /me/progress) */
 export function ResultsPage() {
   const navigate = useNavigate()
-  const { remaining, applied, isReturnVisit, setStage } = useResults()
+  const { remaining, applied, isReturnVisit, setStage, offices } = useResults()
   const [tab, setTab] = useState<StatusTab>('all')
   // A2: 다시 방문했을 때 심사 대기 중인 신청 하나의 결과를 물음. 아직이에요를 누르면 이번 방문 동안 숨김
   const [notYet, setNotYet] = useState<string[]>([])
@@ -27,12 +27,12 @@ export function ResultsPage() {
   const count = (t: StatusTab) => (t === 'all' ? remaining.length : remaining.filter((b) => b.status === t).length)
   const visible = tab === 'all' ? remaining : remaining.filter((b) => b.status === tab)
   const groups = [
-    ...OFFICES.map((office) => ({ office, benefits: visible.filter((b) => b.officeId === office.id) })),
+    ...offices.map((office) => ({ office, benefits: visible.filter((b) => b.officeId === office.id) })),
     { office: null, benefits: visible.filter((b) => b.officeId === null) },
   ].filter((g) => g.benefits.length > 0)
 
   // 지금 할 일: 신청 전 항목이 가장 많은 접수처 (없으면 남은 신청이 가장 많은 곳)
-  const todo = OFFICES.map((office) => {
+  const todo = offices.map((office) => {
     const atOffice = remaining.filter((b) => b.officeId === office.id)
     return { office, count: atOffice.length, before: atOffice.filter((b) => b.status === 'before').length }
   }).sort((a, b) => b.before - a.before || b.count - a.count)[0]
