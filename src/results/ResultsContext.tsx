@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { KAKAO_CALLBACK_PATH } from '../api/auth'
 import { getToken } from '../api/client'
+import { fetchDongs } from '../api/dongs'
+import { bandText, fetchIncomeBands } from '../api/incomeBands'
 import { fromJudgeRequest, postJudge, toJudgeRequest, type JudgeRequest, type JudgeResult } from '../api/judge'
 import { fetchOffices, type ApiOffice } from '../api/offices'
 import { buildServices, getProgress, putProgress, userStatusOf, type UserStatus } from '../api/progress'
@@ -66,6 +68,25 @@ const SEPARATE_STATUS: Record<ApplicationProgress, UserStatus> = { '심사 대�
 const separateStatuses = (s: Partial<Situation>) =>
   Object.fromEntries(Object.entries(s.separate ?? {}).map(([id, label]) => [id, SEPARATE_STATUS[label]]))
 
+/**
+ * 서버 profile → 화면 상황 값. 서버에 없는 구·소득 글자는 목록 API로 다시 채움
+ * (구: GET /dongs, 소득 글자: GET /income-bands — 12 화면과 같은 글자). 누가(본인/보호자)는 서버에 없어 비움
+ */
+async function situationFromProfile(profile: JudgeRequest): Promise<Partial<Situation>> {
+  const base = fromJudgeRequest(profile)
+  const needBands = profile.household != null && base.income != null && base.income !== 'unknown'
+  const [dongs, bands] = await Promise.all([
+    fetchDongs().catch(() => []),
+    needBands ? fetchIncomeBands(profile.household!).catch(() => null) : null,
+  ])
+  const band = bands?.bands.find((b) => b.id === base.income)
+  return {
+    ...base,
+    gu: dongs.find((d) => d.dong === profile.dong)?.gu ?? null,
+    incomeLabel: band && bands ? bandText(band, bands.bands).label : null,
+  }
+}
+
 /** PUT /me/progress — 로그인(토큰)했을 때만. 목록 통째로 저장 (따로 신청한 것과 상태 포함) */
 function save(situation: Partial<Situation>, judge: JudgeResult | null, progress: Record<string, ProgressEntry>) {
   if (!getToken()) return
@@ -97,10 +118,14 @@ export function ResultsProvider({ children }: { children: ReactNode }) {
       const stage = userStatusOf(s)
       if (stage) progress[s.id] = { stage, submittedAt: s.submitted_at ? `${s.submitted_at}T00:00:00` : null }
     }
-    // 다른 기기에서 열면 상황 값이 비어 있으니 서버 profile로 채움 (구·누가·소득 글자는 서버에 없음)
-    if (overwrite || !situation.dong) replace(fromJudgeRequest(profile))
-    const { judge, offices } = await judgeWithOffices(profile)
+    // 다른 기기에서 열면 상황 값이 비어 있으니 서버 profile로 채움
+    const shouldFill = overwrite || !situation.dong
+    const [{ judge, offices }, restored] = await Promise.all([
+      judgeWithOffices(profile),
+      shouldFill ? situationFromProfile(profile) : null,
+    ])
     if (!alive()) return false
+    if (restored) replace(restored)
     setState((prev) => ({ ...prev, progress, judge, offices }))
     setIsReturnVisit(Object.values(progress).some((p) => p.stage === 'submitted'))
     return true

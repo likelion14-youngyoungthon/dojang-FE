@@ -8,7 +8,7 @@ export interface Dong {
 
 let cache: Promise<Dong[]> | undefined
 /** GET /dongs — 목록은 바뀌지 않으니 한 번만 부름 (실패하면 다음에 다시) */
-function fetchDongs() {
+export function fetchDongs() {
   cache ??= api.get<Dong[]>('/dongs').catch((e) => {
     cache = undefined
     throw e
